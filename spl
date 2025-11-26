@@ -337,11 +337,17 @@
       <table>
         <search base="base_syslog">
           <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user")
+| rex field=_raw "(?i)SSH access by user\s+(?&lt;brocade_user&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP\s+(?&lt;brocade_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
+| rex field=_raw "(?i)login failed\s*\[user:\s*(?&lt;cisco_user&gt;[^\]\s]*)\]\s*\[source:\s*(?&lt;cisco_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
 | rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr|rhost|client)[:=\s\[\(>]+(?&lt;source_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
 | rex field=_raw "(?i)(?:user(?:name)?|account|login|by)[\s:=\"']+(?&lt;username&gt;[A-Za-z0-9_.-]{1,64})"
 | rex field=_raw "(?i)for\s+(?:user\s+)?(?&lt;username_alt&gt;[A-Za-z0-9_.-]{1,64})"
+| eval source_ip=coalesce(brocade_ip, cisco_ip, source_ip)
+| eval username=coalesce(brocade_user, cisco_user, username, username_alt)
+| eval source_ip=if(len(trim(source_ip))=0, null(), source_ip)
+| eval username=if(len(trim(username))=0, null(), username)
 | eval source_ip=coalesce(source_ip, "Unknown")
-| eval username=coalesce(username, username_alt, "Unknown")
+| eval username=coalesce(username, "Unknown")
 | stats count as Attempts latest(_time) as Last_Attempt by host source_ip username
 | eval Last_Attempt=strftime(Last_Attempt, "%Y-%m-%d %H:%M:%S")
 | eval Threat_Level=case(Attempts&gt;=20, "HIGH", Attempts&gt;=10, "MEDIUM", Attempts&gt;=5, "LOW", true(), "INFO")
