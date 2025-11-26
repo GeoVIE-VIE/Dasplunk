@@ -336,14 +336,16 @@
       <title>Failed Login Attempts</title>
       <table>
         <search base="base_syslog">
-          <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user")
+          <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user" OR "SSH access" OR "rejected, 1 attempt")
 | rex field=_raw "(?i)SSH access by user\s+(?&lt;brocade_user&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP\s+(?&lt;brocade_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
 | rex field=_raw "(?i)login failed\s*\[user:\s*(?&lt;cisco_user&gt;[^\]\s]*)\]\s*\[source:\s*(?&lt;cisco_ip&gt;\d{1,3}(?:\.\d{1,3}){3})\]"
+| rex field=_raw "(?i)%SEC_LOGIN-4-LOGIN_FAILED:\s*login failed\s*\[user:\s*(?&lt;cisco_user_alt&gt;[^\]\s]*)\]\s*\[source:\s*(?&lt;cisco_ip_alt&gt;\d{1,3}(?:\.\d{1,3}){3})?\]"
 | rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr|rhost|client)[:=\s\[\(>]+(?&lt;source_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
 | rex field=_raw "(?i)(?:user(?:name)?|account|login|by)[\s:=\"']+(?&lt;username&gt;[A-Za-z0-9_.-]{1,64})"
 | rex field=_raw "(?i)for\s+(?:user\s+)?(?&lt;username_alt&gt;[A-Za-z0-9_.-]{1,64})"
-| eval source_ip=coalesce(brocade_ip, cisco_ip, source_ip)
-| eval username=coalesce(brocade_user, cisco_user, username, username_alt)
+| rex field=_raw "(?i)user\s+(?&lt;username_brocade&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP"
+| eval source_ip=coalesce(brocade_ip, cisco_ip, cisco_ip_alt, source_ip)
+| eval username=coalesce(brocade_user, cisco_user, cisco_user_alt, username, username_alt, username_brocade)
 | eval source_ip=if(len(trim(source_ip))=0, null(), source_ip)
 | eval username=if(len(trim(username))=0, null(), username)
 | eval source_ip=coalesce(source_ip, "Unknown")
@@ -460,31 +462,25 @@
     </panel>
   </row>
 
-  <!-- OSPF ADJACENCY EVENTS -->
-  <!-- Cisco OSPF format: %OSPF-5-ADJCHG: Process <id>, Nbr <ip> on <interface> from <state> to <state>, <reason> -->
-  <!-- Brocade OSPF: Uses similar format with neighbor state transitions -->
+  <!-- ROUTING PROTOCOL EVENTS -->
   <row>
     <panel>
-      <title>OSPF Adjacency Events</title>
+      <title>Routing Protocol Events</title>
       <table>
         <search base="base_syslog">
-          <query>| search (OSPF OR ADJCHG OR "Nbr" OR "neighbor" OR "adjacency")
-| rex field=_raw "Process\s+(?&lt;ospf_process&gt;\d+)"
-| rex field=_raw "Nbr\s+(?&lt;neighbor_id&gt;\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
-| rex field=_raw "on\s+(?&lt;ospf_interface&gt;[A-Za-z0-9/\.]+)"
-| rex field=_raw "from\s+(?&lt;from_state&gt;[A-Z0-9]+)\s+to\s+(?&lt;to_state&gt;[A-Z0-9]+)"
-| rex field=_raw ",\s*(?&lt;ospf_reason&gt;[^,]+)$"
-| search neighbor_id=*
-| eval ospf_process=coalesce(ospf_process,"N/A")
-| eval ospf_interface=coalesce(ospf_interface,"N/A")
-| eval from_state=coalesce(from_state,"N/A")
-| eval to_state=coalesce(to_state,"N/A")
-| eval ospf_reason=coalesce(ospf_reason,"N/A")
-| table _time host ospf_process neighbor_id ospf_interface from_state to_state ospf_reason
-| sort -_time
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
+| rex field=_raw "(?i)on\s+(?&lt;routing_int&gt;[A-Za-z0-9/\.]+)"
+| rex field=_raw "(?i)to\s+(?&lt;routing_state&gt;[A-Z0-9_]+)"
+| eval neighbor_ip=coalesce(neighbor_ip,"Unknown")
+| eval routing_int=coalesce(routing_int,"Unknown")
+| eval routing_state=coalesce(routing_state,"Unknown")
+| stats count as Events latest(routing_state) as Last_State latest(_time) as Last_Seen by routing_protocol host neighbor_ip routing_int
+| eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S")
+| sort -Events
 | head 25
-| eval _time=strftime(_time, "%Y-%m-%d %H:%M:%S")
-| rename _time as "Timestamp" host as "Device" ospf_process as "Process" neighbor_id as "Neighbor" ospf_interface as "Interface" from_state as "From State" to_state as "To State" ospf_reason as "Reason"</query>
+| rename routing_protocol as "Protocol" host as "Device" neighbor_ip as "Neighbor" routing_int as "Interface" routing_state as "Current State" Events as "Event Count" Last_Seen as "Last Activity"</query>
         </search>
         <option name="count">10</option>
         <option name="drilldown">none</option>
@@ -492,43 +488,19 @@
     </panel>
 
     <panel>
-      <title>OSPF State Transitions</title>
+      <title>Routing Protocol State Changes</title>
       <chart>
         <search base="base_syslog">
-          <query>| search (OSPF OR ADJCHG) | rex field=_raw "from\s+(?&lt;from_state&gt;[A-Z0-9]+)\s+to\s+(?&lt;to_state&gt;[A-Z0-9]+)" | search to_state=* | eval transition=from_state." -&gt; ".to_state | stats count by transition | sort -count | head 10</query>
-        </search>
-        <option name="charting.chart">bar</option>
-        <option name="charting.chart.showDataLabels">all</option>
-        <option name="charting.drilldown">none</option>
-        <option name="charting.seriesColors">[#10b981]</option>
-        <option name="height">300</option>
-      </chart>
-    </panel>
-  </row>
-
-  <!-- OSPF NEIGHBOR STATUS -->
-  <row>
-    <panel>
-      <title>OSPF Neighbor Summary</title>
-      <table>
-        <search base="base_syslog">
-          <query>| search (OSPF OR ADJCHG) | rex field=_raw "Nbr\s+(?&lt;neighbor_id&gt;\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})" | rex field=_raw "on\s+(?&lt;ospf_interface&gt;[A-Za-z0-9/\.]+)" | rex field=_raw "to\s+(?&lt;to_state&gt;[A-Z0-9]+)" | search neighbor_id=* | stats count as Events latest(to_state) as Last_State latest(_time) as Last_Seen by host neighbor_id ospf_interface | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S") | eval Status=case(Last_State="FULL","Healthy",Last_State="DOWN","Down",Last_State="INIT" OR Last_State="2WAY","Initializing",Last_State="EXSTART" OR Last_State="EXCHANGE" OR Last_State="LOADING","Synchronizing",true(),"Unknown") | sort -Events | head 20 | rename host as "Local Device" neighbor_id as "Neighbor ID" ospf_interface as "Interface" Last_State as "Current State" Status as "Status" Events as "Event Count" Last_Seen as "Last Activity"</query>
-        </search>
-        <option name="count">10</option>
-        <option name="drilldown">none</option>
-      </table>
-    </panel>
-
-    <panel>
-      <title>OSPF Down Events Timeline</title>
-      <chart>
-        <search base="base_syslog">
-          <query>| search (OSPF OR ADJCHG) "to DOWN" | timechart span=1h count as "OSPF Down Events"</query>
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| eval routing_state=case(match(_raw,"(?i)(down|idle|closed|hold)"),"Down", match(_raw,"(?i)(up|full|established)"),"Up", true(),"Other")
+| timechart span=1h count by routing_protocol useother=f limit=0
+| fields - OTHER</query>
         </search>
         <option name="charting.chart">line</option>
         <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.drilldown">none</option>
-        <option name="charting.seriesColors">[#ef4444]</option>
+        <option name="charting.seriesColors">[#10b981,#6366f1,#8b5cf6,#f97316,#ef4444]</option>
         <option name="height">300</option>
       </chart>
     </panel>
