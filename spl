@@ -64,11 +64,19 @@
 | eval facility_num=if(isnum(pri), floor(pri/8), null())
 | eval syslog_severity=if(isnum(pri), pri%8, null())
 | rex field=_raw "%(?&lt;cisco_facility&gt;[A-Z][A-Z0-9_]*)-(?&lt;cisco_severity&gt;[0-7])-(?&lt;cisco_mnemonic&gt;[A-Z0-9_]+)"
-| rex field=_raw "^\w+\s+\d+\s+[\d:]+:(?&lt;brocade_level&gt;[ACDMEINW]):(?&lt;brocade_facility&gt;[A-Za-z0-9_]+):"
-| eval vendor_detected=case(isnotnull(cisco_facility), "cisco", isnotnull(brocade_level), "brocade", match(host, "(?i)^(SW-|RTR-|cisco|ios)"), "cisco", match(host, "(?i)(FCX|ICX|VDX|brocade|ruckus)"), "brocade", true(), "unknown")
-| eval severity_num=case(vendor_detected="cisco" AND isnotnull(cisco_severity), tonumber(cisco_severity), vendor_detected="brocade" AND brocade_level="M", 0, vendor_detected="brocade" AND brocade_level="A", 1, vendor_detected="brocade" AND brocade_level="C", 2, vendor_detected="brocade" AND brocade_level="E", 3, vendor_detected="brocade" AND brocade_level="W", 4, vendor_detected="brocade" AND brocade_level="N", 5, vendor_detected="brocade" AND brocade_level="I", 6, vendor_detected="brocade" AND brocade_level="D", 7, isnotnull(syslog_severity), syslog_severity, true(), 6)
-| eval facility_code=coalesce(cisco_facility, brocade_facility)
-| eval mnemonic=cisco_mnemonic
+| rex field=_raw "^(?:&lt;\d+&gt;\s*)?(?:\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}|\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2})[:,\s]+(?&lt;brocade_level_letter&gt;[ACDMEINW])[:\s]+(?&lt;brocade_facility&gt;[A-Za-z0-9_\-]+)"
+| rex field=_raw "^(?:&lt;\d+&gt;\s*)?(?:\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}|\d{4}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2})\s+(?&lt;brocade_host_token&gt;[^\s:]+)\s+(?&lt;brocade_facility_simple&gt;[A-Za-z0-9_.\-]+)"
+| rex field=_raw "\[(?&lt;brocade_module&gt;[A-Z0-9]{3})/(?&lt;brocade_severity_num&gt;[0-7])/(?&lt;brocade_code&gt;[A-Z0-9_-]+)\]"
+| rex field=_raw "%(?&lt;brocade_facility_alt&gt;[A-Z0-9_]+)-(?&lt;brocade_severity_alt&gt;[0-7])-(?&lt;brocade_code_alt&gt;[A-Z0-9_-]+)"
+| eval brocade_severity_raw=coalesce(brocade_severity_num, brocade_severity_alt)
+| eval brocade_code=coalesce(brocade_code, brocade_code_alt)
+| eval brocade_facility=coalesce(brocade_facility, brocade_facility_alt, brocade_module, brocade_facility_simple)
+| eval brocade_level_letter=if(isnull(brocade_level_letter) AND isnotnull(brocade_severity_raw), case(brocade_severity_raw=0,"M",brocade_severity_raw=1,"A",brocade_severity_raw=2,"C",brocade_severity_raw=3,"E",brocade_severity_raw=4,"W",brocade_severity_raw=5,"N",brocade_severity_raw=6,"I",brocade_severity_raw=7,"D"), brocade_level_letter)
+| eval brocade_level=brocade_level_letter
+| eval vendor_detected=case(isnotnull(cisco_facility), "cisco", isnotnull(brocade_facility) OR isnotnull(brocade_code) OR isnotnull(brocade_level_letter) OR isnotnull(brocade_facility_simple), "brocade", match(host, "(?i)^(SW-|RTR-|cisco|ios)"), "cisco", true(), "brocade")
+| eval severity_num=case(vendor_detected="cisco" AND isnotnull(cisco_severity), tonumber(cisco_severity), vendor_detected="brocade" AND brocade_level_letter="M", 0, vendor_detected="brocade" AND brocade_level_letter="A", 1, vendor_detected="brocade" AND brocade_level_letter="C", 2, vendor_detected="brocade" AND brocade_level_letter="E", 3, vendor_detected="brocade" AND brocade_level_letter="W", 4, vendor_detected="brocade" AND brocade_level_letter="N", 5, vendor_detected="brocade" AND brocade_level_letter="I", 6, vendor_detected="brocade" AND brocade_level_letter="D", 7, isnotnull(syslog_severity), syslog_severity, true(), 6)
+| eval facility_code=coalesce(cisco_facility, brocade_facility, brocade_facility_simple, vendor_detected)
+| eval mnemonic=coalesce(cisco_mnemonic, brocade_code, brocade_facility)
 | eval severity_label=case(severity_num=0, "Emergency", severity_num=1, "Alert", severity_num=2, "Critical", severity_num=3, "Error", severity_num=4, "Warning", severity_num=5, "Notice", severity_num=6, "Informational", severity_num=7, "Debug", true(), "Unknown")
 | search $vendor_filter$ $severity_filter$ $facility_filter$</query>
     <earliest>$time_range.earliest$</earliest>
@@ -252,7 +260,7 @@
       <title>Cisco Interface Events</title>
       <table>
         <search base="base_syslog">
-          <query>| search vendor_detected="cisco" | rex field=_raw "(?i)(?&lt;interface&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-channel|Vlan|Loopback|Tunnel|Serial|Gi|Te|Fa|Et|Po|Vl|Lo|Tu|Se)[^\s,]*)" | search interface=* | stats count as Events latest(_time) as Last_Seen by host interface | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S") | sort -Events | head 20 | rename host as "Device" interface as "Interface" Events as "Event Count" Last_Seen as "Last Activity"</query>
+          <query>| search vendor_detected="cisco" | rex field=_raw "(?i)(?&lt;interface&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Vlan|Loopback|Tunnel|Serial|Gi|Te|Fa|Et|Po|Vl|Lo|Tu|Se)\s*\d+(?:/\d+)*(?:\.\d+)?)" | search interface=* | stats count as Events latest(_time) as Last_Seen by host interface | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S") | sort -Events | head 20 | rename host as "Device" interface as "Interface" Events as "Event Count" Last_Seen as "Last Activity"</query>
         </search>
         <option name="count">10</option>
         <option name="drilldown">none</option>
@@ -296,7 +304,7 @@
       <title>Brocade Interface Events</title>
       <table>
         <search base="base_syslog">
-          <query>| search vendor_detected="brocade" | rex field=_raw "(?i)(?:interface|port|ethernet)\s*(?&lt;brocade_interface&gt;\d+/\d+(?:/\d+)?)" | search brocade_interface=* | stats count as Occurrences latest(_time) as Last_Seen by host brocade_interface | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S") | sort -Occurrences | head 15 | rename host as "Device" brocade_interface as "Interface" Occurrences as "Event Count" Last_Seen as "Last Detected"</query>
+          <query>| search vendor_detected="brocade" | rex field=_raw "(?i)(?:interface|port|eth(?:ernet)?|\bet-?port)\s*(?&lt;brocade_interface&gt;\d+/\d+(?:/\d+)?|\d+-\d+-\d+)" | search brocade_interface=* | stats count as Occurrences latest(_time) as Last_Seen by host brocade_interface | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S") | sort -Occurrences | head 15 | rename host as "Device" brocade_interface as "Interface" Occurrences as "Event Count" Last_Seen as "Last Detected"</query>
         </search>
         <option name="count">10</option>
         <option name="drilldown">none</option>
@@ -324,7 +332,17 @@
       <title>Failed Login Attempts</title>
       <table>
         <search base="base_syslog">
-          <query>| rex field=_raw "(?i)(?:from|source|src|ip)[:\s]+(?&lt;source_ip&gt;\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})" | rex field=_raw "(?i)user[:\s]+(?&lt;username&gt;[a-zA-Z0-9_\-\.]+)" | search (failed OR denied OR rejected OR unauthorized OR "authentication failure" OR "login failed" OR SEC_LOGIN) | eval source_ip=coalesce(source_ip, "Unknown") | eval username=coalesce(username, "Unknown") | stats count as Attempts values(username) as Usernames latest(_time) as Last_Attempt by host source_ip | eval Last_Attempt=strftime(Last_Attempt, "%Y-%m-%d %H:%M:%S") | eval Threat_Level=case(Attempts&gt;=20, "HIGH", Attempts&gt;=10, "MEDIUM", Attempts&gt;=5, "LOW", true(), "INFO") | sort -Attempts | head 15 | rename host as "Target Device" source_ip as "Source IP" Attempts as "Failed Attempts" Usernames as "Attempted Users" Last_Attempt as "Last Seen" Threat_Level as "Risk"</query>
+          <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user")
+| rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr)[:=\s\[\(]+(?&lt;source_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
+| rex field=_raw "(?i)(?:user(?:name)?|account|login)[:=\s\"]+(?&lt;username&gt;[\w\.-]+)"
+| eval source_ip=coalesce(source_ip, "Unknown")
+| eval username=coalesce(username, "Unknown")
+| stats count as Attempts latest(_time) as Last_Attempt by host source_ip username
+| eval Last_Attempt=strftime(Last_Attempt, "%Y-%m-%d %H:%M:%S")
+| eval Threat_Level=case(Attempts&gt;=20, "HIGH", Attempts&gt;=10, "MEDIUM", Attempts&gt;=5, "LOW", true(), "INFO")
+| sort -Attempts
+| head 15
+| rename host as "Target Device" source_ip as "Source IP" Attempts as "Failed Attempts" username as "Attempted User" Last_Attempt as "Last Seen" Threat_Level as "Risk"</query>
         </search>
         <option name="count">10</option>
         <option name="drilldown">none</option>
@@ -395,7 +413,7 @@
       <title>Recent Link Down Events</title>
       <table>
         <search base="base_syslog">
-          <query>| search ("changed state to down" OR "link-down" OR "is down" OR "state down") | rex field=_raw "(?i)(?&lt;interface&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-channel|Vlan|Gi|Te|Fa|Et|Po|Vl)[^\s,]*)" | search interface=* | stats count as Occurrences latest(_time) as Last_Down by host interface | eval Last_Down=strftime(Last_Down, "%Y-%m-%d %H:%M:%S") | eval Flapping=if(Occurrences&gt;3, "Yes", "No") | sort -Occurrences | head 20 | rename host as "Device" interface as "Interface" Occurrences as "Down Count" Last_Down as "Last Down" Flapping as "Flapping?"</query>
+          <query>| search ("changed state to down" OR "link-down" OR "is down" OR "state down") | rex field=_raw "(?i)(?&lt;interface&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Vlan|Gi|Te|Fa|Et|Po|Vl)\s*\d+(?:/\d+)*(?:\.\d+)?)" | search interface=* | stats count as Occurrences latest(_time) as Last_Down by host interface | eval Last_Down=strftime(Last_Down, "%Y-%m-%d %H:%M:%S") | eval Flapping=if(Occurrences&gt;3, "Yes", "No") | sort -Occurrences | head 20 | rename host as "Device" interface as "Interface" Occurrences as "Down Count" Last_Down as "Last Down" Flapping as "Flapping?"</query>
         </search>
         <option name="count">10</option>
         <option name="drilldown">none</option>
