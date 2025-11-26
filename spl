@@ -336,7 +336,7 @@
       <title>Failed Login Attempts</title>
       <table>
         <search base="base_syslog">
-          <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user" OR "SSH access" OR "rejected, 1 attempt")
+          <query>| search ("login failed" OR "failed login" OR "rejected, 1 attempt")
 | rex field=_raw "(?i)SSH access by user\s+(?&lt;brocade_user&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP\s+(?&lt;brocade_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
 | rex field=_raw "(?i)user\s+(?&lt;brocade_user_alt&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP\s+(?&lt;brocade_ip_alt&gt;\d{1,3}(?:\.\d{1,3}){3})\s+rejected"
 | rex field=_raw "(?i)%SEC_LOGIN-4-LOGIN_FAILED:\s*login failed\s*\[user:\s*(?&lt;cisco_user&gt;[^\]]*)\]\s*\[source:\s*(?&lt;cisco_ip&gt;\d{1,3}(?:\.\d{1,3}){3})?\]"
