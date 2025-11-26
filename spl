@@ -338,14 +338,18 @@
         <search base="base_syslog">
           <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user" OR "SSH access" OR "rejected, 1 attempt")
 | rex field=_raw "(?i)SSH access by user\s+(?&lt;brocade_user&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP\s+(?&lt;brocade_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
-| rex field=_raw "(?i)login failed\s*\[user:\s*(?&lt;cisco_user&gt;[^\]\s]*)\]\s*\[source:\s*(?&lt;cisco_ip&gt;\d{1,3}(?:\.\d{1,3}){3})\]"
-| rex field=_raw "(?i)%SEC_LOGIN-4-LOGIN_FAILED:\s*login failed\s*\[user:\s*(?&lt;cisco_user_alt&gt;[^\]\s]*)\]\s*\[source:\s*(?&lt;cisco_ip_alt&gt;\d{1,3}(?:\.\d{1,3}){3})?\]"
-| rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr|rhost|client)[:=\s\[\(>]+(?&lt;source_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
-| rex field=_raw "(?i)(?:user(?:name)?|account|login|by)[\s:=\"']+(?&lt;username&gt;[A-Za-z0-9_.-]{1,64})"
+| rex field=_raw "(?i)user\s+(?&lt;brocade_user_alt&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP\s+(?&lt;brocade_ip_alt&gt;\d{1,3}(?:\.\d{1,3}){3})\s+rejected"
+| rex field=_raw "(?i)%SEC_LOGIN-4-LOGIN_FAILED:\s*login failed\s*\[user:\s*(?&lt;cisco_user&gt;[^\]]*)\]\s*\[source:\s*(?&lt;cisco_ip&gt;\d{1,3}(?:\.\d{1,3}){3})?\]"
+| rex field=_raw "(?i)login failed\s*\[user:\s*(?&lt;cisco_user_alt&gt;[^\]]*)\]\s*\[source:\s*(?&lt;cisco_ip_alt&gt;\d{1,3}(?:\.\d{1,3}){3})?\]"
+| rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr|rhost|client)[:=\s\[\(>]+(?&lt;source_ip_generic&gt;\d{1,3}(?:\.\d{1,3}){3})"
+| rex field=_raw "(?i)(?:user(?:name)?|account|login|by)[\s:=\"']+(?&lt;username_generic&gt;[A-Za-z0-9_.-]{1,64})"
 | rex field=_raw "(?i)for\s+(?:user\s+)?(?&lt;username_alt&gt;[A-Za-z0-9_.-]{1,64})"
-| rex field=_raw "(?i)user\s+(?&lt;username_brocade&gt;[A-Za-z0-9_.-]+)\s+from\s+(?:src\s+)?IP"
-| eval source_ip=coalesce(brocade_ip, cisco_ip, cisco_ip_alt, source_ip)
-| eval username=coalesce(brocade_user, cisco_user, cisco_user_alt, username, username_alt, username_brocade)
+| eval brocade_ip=coalesce(brocade_ip, brocade_ip_alt)
+| eval brocade_user=coalesce(brocade_user, brocade_user_alt)
+| eval cisco_user=if(len(trim(cisco_user))=0, null(), cisco_user)
+| eval cisco_user_alt=if(len(trim(cisco_user_alt))=0, null(), cisco_user_alt)
+| eval source_ip=coalesce(brocade_ip, cisco_ip, cisco_ip_alt, source_ip_generic)
+| eval username=coalesce(brocade_user, cisco_user, cisco_user_alt, username_generic, username_alt)
 | eval source_ip=if(len(trim(source_ip))=0, null(), source_ip)
 | eval username=if(len(trim(username))=0, null(), username)
 | eval source_ip=coalesce(source_ip, "Unknown")
@@ -470,12 +474,15 @@
         <search base="base_syslog">
           <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
-| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
-| rex field=_raw "(?i)on\s+(?&lt;routing_int&gt;[A-Za-z0-9/\.]+)"
-| rex field=_raw "(?i)to\s+(?&lt;routing_state&gt;[A-Z0-9_]+)"
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})(?:\s*\((?&lt;neighbor_int_paren&gt;[A-Za-z0-9_./-]+)\))?"
+| rex field=_raw "(?i)\((?&lt;routing_int_paren&gt;[A-Za-z0-9_./-]+)\)\s+(?:is\s+)?(?:Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect)"
+| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;[A-Za-z0-9_./-]+)"
+| rex field=_raw "(?i)intf\s+(?&lt;routing_int_alt&gt;[A-Za-z0-9_./-]+)"
+| rex field=_raw "(?i)from\s+(?:\w+\s+)?to\s+(?&lt;routing_state_fromto&gt;[A-Za-z0-9_]+)"
+| rex field=_raw "(?i)(?:state|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold)"
 | eval neighbor_ip=coalesce(neighbor_ip,"Unknown")
-| eval routing_int=coalesce(routing_int,"Unknown")
-| eval routing_state=coalesce(routing_state,"Unknown")
+| eval routing_int=coalesce(routing_int, routing_int_alt, routing_int_paren, neighbor_int_paren, "Unknown")
+| eval routing_state=coalesce(routing_state_fromto, routing_state, "Unknown")
 | stats count as Events latest(routing_state) as Last_State latest(_time) as Last_Seen by routing_protocol host neighbor_ip routing_int
 | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S")
 | sort -Events
