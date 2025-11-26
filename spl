@@ -96,7 +96,41 @@
           .table-chrome { background: transparent !important; }
           .shared-tableview .table th { background: rgba(15, 23, 42, 0.95) !important; color: #a5b4fc !important; }
           .shared-tableview .table td { background: transparent !important; color: #e2e8f0 !important; }
+          .hero-banner { padding: 20px 24px; background: linear-gradient(120deg, rgba(99,102,241,0.15), rgba(14,165,233,0.12));
+                          border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.35);
+                          backdrop-filter: blur(6px); color: #e2e8f0; }
+          .hero-banner h1 { margin: 0 0 6px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+          .hero-banner p { margin: 4px 0 12px 0; color: #cbd5e1; font-size: 13px; }
+          .hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+          .hero-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; margin-right: 8px; border-radius: 999px;
+                       background: rgba(15,23,42,0.65); color: #c7d2fe; font-size: 12px; border: 1px solid rgba(99,102,241,0.4); }
+          .hero-card { padding: 12px; border-radius: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(226,232,240,0.08);
+                       box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); font-size: 13px; color: #e2e8f0; }
         </style>
+      </html>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Executive Experience</title>
+      <html>
+        <div class="hero-banner">
+          <h1>Premium Network Syslog Cockpit</h1>
+          <p>Curated views for routing stability, spanning tree health, and vendor performance without altering the underlying searches.</p>
+          <div style="margin-bottom:10px;">
+            <span class="hero-chip">Time: $time_range.earliest$ → $time_range.latest$</span>
+            <span class="hero-chip">Vendor filter: $vendor_filter$</span>
+            <span class="hero-chip">Severity filter: $severity_filter$</span>
+            <span class="hero-chip">Facility filter: $facility_filter$</span>
+          </div>
+          <div class="hero-grid">
+            <div class="hero-card">Interactive KPI tiles for total syslog volume, device counts, and severity-driven action lists.</div>
+            <div class="hero-card">High-contrast timelines and distribution charts optimized for dark command centers.</div>
+            <div class="hero-card">Precision tables for routing adjacencies, spanning-tree changes, and live syslog streaming.</div>
+            <div class="hero-card">Adaptive layout with glassmorphism accents that preserves every existing query while elevating readability.</div>
+          </div>
+        </div>
       </html>
     </panel>
   </row>
@@ -474,15 +508,16 @@
         <search base="base_syslog">
           <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
-| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})(?:\s*\((?&lt;neighbor_int_paren&gt;[A-Za-z0-9_./-]+)\))?"
-| rex field=_raw "(?i)\((?&lt;routing_int_paren&gt;[A-Za-z0-9_./-]+)\)\s+(?:is\s+)?(?:Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect)"
-| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;[A-Za-z0-9_./-]+)"
-| rex field=_raw "(?i)intf\s+(?&lt;routing_int_alt&gt;[A-Za-z0-9_./-]+)"
-| rex field=_raw "(?i)from\s+(?:\w+\s+)?to\s+(?&lt;routing_state_fromto&gt;[A-Za-z0-9_]+)"
-| rex field=_raw "(?i)(?:state|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold)"
-| eval neighbor_ip=coalesce(neighbor_ip,"Unknown")
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))(?:\s*\((?&lt;neighbor_int_paren&gt;[A-Za-z0-9_./-]+)\))?"
+| rex field=_raw "(?i)\((?&lt;routing_int_paren&gt;[A-Za-z]{1,12}[A-Za-z0-9]*\s*\d+(?:/\d+)*(?:\.\d+)?[A-Za-z0-9/.-]*?)\)\s+(?:is\s+)?(?:Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect)"
+| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)intf(?:ace)?\s+(?&lt;routing_int_alt&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)from\s+(?&lt;routing_state_from&gt;[A-Za-z0-9/]+)\s+to\s+(?&lt;routing_state_to&gt;[A-Za-z0-9/]+)"
+| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
 | eval routing_int=coalesce(routing_int, routing_int_alt, routing_int_paren, neighbor_int_paren, "Unknown")
-| eval routing_state=coalesce(routing_state_fromto, routing_state, "Unknown")
+| eval routing_int=trim(replace(routing_int, "\\s+", ""))
+| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from, "Unknown")
 | stats count as Events latest(routing_state) as Last_State latest(_time) as Last_Seen by routing_protocol host neighbor_ip routing_int
 | eval Last_Seen=strftime(Last_Seen, "%Y-%m-%d %H:%M:%S")
 | sort -Events
