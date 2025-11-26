@@ -75,7 +75,7 @@
 | eval brocade_level=brocade_level_letter
 | eval vendor_detected=case(isnotnull(cisco_facility), "cisco", isnotnull(brocade_facility) OR isnotnull(brocade_code) OR isnotnull(brocade_level_letter) OR isnotnull(brocade_facility_simple), "brocade", match(host, "(?i)^(SW-|RTR-|cisco|ios)"), "cisco", true(), "brocade")
 | eval severity_num=case(vendor_detected="cisco" AND isnotnull(cisco_severity), tonumber(cisco_severity), vendor_detected="brocade" AND brocade_level_letter="M", 0, vendor_detected="brocade" AND brocade_level_letter="A", 1, vendor_detected="brocade" AND brocade_level_letter="C", 2, vendor_detected="brocade" AND brocade_level_letter="E", 3, vendor_detected="brocade" AND brocade_level_letter="W", 4, vendor_detected="brocade" AND brocade_level_letter="N", 5, vendor_detected="brocade" AND brocade_level_letter="I", 6, vendor_detected="brocade" AND brocade_level_letter="D", 7, isnotnull(syslog_severity), syslog_severity, true(), 6)
-| eval facility_code=coalesce(cisco_facility, brocade_facility, brocade_facility_simple, vendor_detected)
+| eval facility_code=coalesce(cisco_facility, brocade_facility, brocade_facility_simple, brocade_code, cisco_mnemonic, "Uncategorized")
 | eval mnemonic=coalesce(cisco_mnemonic, brocade_code, brocade_facility)
 | eval severity_label=case(severity_num=0, "Emergency", severity_num=1, "Alert", severity_num=2, "Critical", severity_num=3, "Error", severity_num=4, "Warning", severity_num=5, "Notice", severity_num=6, "Informational", severity_num=7, "Debug", true(), "Unknown")
 | search $vendor_filter$ $severity_filter$ $facility_filter$</query>
@@ -276,7 +276,11 @@
       <title>Brocade Event Categories</title>
       <chart>
         <search base="base_syslog">
-          <query>| search vendor_detected="brocade" brocade_facility=* | stats count by brocade_facility | sort -count | head 15 | rename brocade_facility as Category</query>
+          <query>| search vendor_detected="brocade" (brocade_facility=* OR brocade_code=*)
+| eval brocade_category=coalesce(brocade_facility, brocade_code)
+| eval brocade_category=replace(brocade_category, "[^A-Za-z0-9_-]", "")
+| eval brocade_category=case(match(brocade_category, "^[0-9]+$"), "Unclassified", len(brocade_category)=0, "Unclassified", true(), brocade_category)
+| stats count by brocade_category | sort -count | head 15 | rename brocade_category as Category</query>
         </search>
         <option name="charting.chart">bar</option>
         <option name="charting.chart.showDataLabels">all</option>
@@ -333,10 +337,11 @@
       <table>
         <search base="base_syslog">
           <query>| search ("login failed" OR "failed login" OR "authentication failure" OR "failed password" OR "LOGIN_FAILED" OR "AAA-3-USER_LOGIN_FAILED" OR "SEC_LOGIN" OR "invalid user")
-| rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr)[:=\s\[\(]+(?&lt;source_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
-| rex field=_raw "(?i)(?:user(?:name)?|account|login)[:=\s\"]+(?&lt;username&gt;[\w\.-]+)"
+| rex field=_raw "(?i)(?:from|src|source(?: address)?|peer|addr|rhost|client)[:=\s\[\(>]+(?&lt;source_ip&gt;\d{1,3}(?:\.\d{1,3}){3})"
+| rex field=_raw "(?i)(?:user(?:name)?|account|login|by)[\s:=\"']+(?&lt;username&gt;[A-Za-z0-9_.-]{1,64})"
+| rex field=_raw "(?i)for\s+(?:user\s+)?(?&lt;username_alt&gt;[A-Za-z0-9_.-]{1,64})"
 | eval source_ip=coalesce(source_ip, "Unknown")
-| eval username=coalesce(username, "Unknown")
+| eval username=coalesce(username, username_alt, "Unknown")
 | stats count as Attempts latest(_time) as Last_Attempt by host source_ip username
 | eval Last_Attempt=strftime(Last_Attempt, "%Y-%m-%d %H:%M:%S")
 | eval Threat_Level=case(Attempts&gt;=20, "HIGH", Attempts&gt;=10, "MEDIUM", Attempts&gt;=5, "LOW", true(), "INFO")
