@@ -35,136 +35,154 @@
       <default>*</default>
       <prefix>host=</prefix>
     </input>
+
+    <!-- AREA FILTER: Replace hostname patterns below with your actual device naming conventions
+         Example: Replace "NYC*" for area pattern and "*NYC-MAN-*", "*NYC-BRK-*" etc for site patterns
+         Format: (host="AREA_PATTERN" OR host="SITE1_PATTERN" OR host="SITE2_PATTERN" ... OR host="SITE10_PATTERN") -->
     <input type="dropdown" token="area_filter" searchWhenChanged="true">
       <label>Area</label>
       <choice value="">All Areas</choice>
-      <choice value="host=&quot;hostname_area1*&quot;">Area 1</choice>
-      <choice value="host=&quot;hostname_area2*&quot;">Area 2</choice>
-      <choice value="host=&quot;hostname_area3*&quot;">Area 3</choice>
-      <choice value="host=&quot;hostname_area4*&quot;">Area 4</choice>
-      <choice value="host=&quot;hostname_area5*&quot;">Area 5</choice>
-      <choice value="host=&quot;hostname_area6*&quot;">Area 6</choice>
-      <choice value="host=&quot;hostname_area7*&quot;">Area 7</choice>
-      <choice value="host=&quot;hostname_area8*&quot;">Area 8</choice>
-      <choice value="host=&quot;hostname_area9*&quot;">Area 9</choice>
-      <choice value="host=&quot;hostname_area10*&quot;">Area 10</choice>
+      <!-- AREA 1: Replace patterns below -->
+      <choice value="(host=&quot;AREA1*&quot; OR host=&quot;*SITE1-1*&quot; OR host=&quot;*SITE1-2*&quot; OR host=&quot;*SITE1-3*&quot; OR host=&quot;*SITE1-4*&quot; OR host=&quot;*SITE1-5*&quot; OR host=&quot;*SITE1-6*&quot; OR host=&quot;*SITE1-7*&quot; OR host=&quot;*SITE1-8*&quot; OR host=&quot;*SITE1-9*&quot; OR host=&quot;*SITE1-10*&quot;)">Area 1</choice>
+      <!-- AREA 2: Replace patterns below -->
+      <choice value="(host=&quot;AREA2*&quot; OR host=&quot;*SITE2-1*&quot; OR host=&quot;*SITE2-2*&quot; OR host=&quot;*SITE2-3*&quot; OR host=&quot;*SITE2-4*&quot; OR host=&quot;*SITE2-5*&quot; OR host=&quot;*SITE2-6*&quot; OR host=&quot;*SITE2-7*&quot; OR host=&quot;*SITE2-8*&quot; OR host=&quot;*SITE2-9*&quot; OR host=&quot;*SITE2-10*&quot;)">Area 2</choice>
+      <!-- AREA 3: Replace patterns below -->
+      <choice value="(host=&quot;AREA3*&quot; OR host=&quot;*SITE3-1*&quot; OR host=&quot;*SITE3-2*&quot; OR host=&quot;*SITE3-3*&quot; OR host=&quot;*SITE3-4*&quot; OR host=&quot;*SITE3-5*&quot; OR host=&quot;*SITE3-6*&quot; OR host=&quot;*SITE3-7*&quot; OR host=&quot;*SITE3-8*&quot; OR host=&quot;*SITE3-9*&quot; OR host=&quot;*SITE3-10*&quot;)">Area 3</choice>
+      <!-- AREA 4: Replace patterns below -->
+      <choice value="(host=&quot;AREA4*&quot; OR host=&quot;*SITE4-1*&quot; OR host=&quot;*SITE4-2*&quot; OR host=&quot;*SITE4-3*&quot; OR host=&quot;*SITE4-4*&quot; OR host=&quot;*SITE4-5*&quot; OR host=&quot;*SITE4-6*&quot; OR host=&quot;*SITE4-7*&quot; OR host=&quot;*SITE4-8*&quot; OR host=&quot;*SITE4-9*&quot; OR host=&quot;*SITE4-10*&quot;)">Area 4</choice>
+      <!-- AREA 5: Replace patterns below -->
+      <choice value="(host=&quot;AREA5*&quot; OR host=&quot;*SITE5-1*&quot; OR host=&quot;*SITE5-2*&quot; OR host=&quot;*SITE5-3*&quot; OR host=&quot;*SITE5-4*&quot; OR host=&quot;*SITE5-5*&quot; OR host=&quot;*SITE5-6*&quot; OR host=&quot;*SITE5-7*&quot; OR host=&quot;*SITE5-8*&quot; OR host=&quot;*SITE5-9*&quot; OR host=&quot;*SITE5-10*&quot;)">Area 5</choice>
+      <!-- AREA 6: Replace patterns below -->
+      <choice value="(host=&quot;AREA6*&quot; OR host=&quot;*SITE6-1*&quot; OR host=&quot;*SITE6-2*&quot; OR host=&quot;*SITE6-3*&quot; OR host=&quot;*SITE6-4*&quot; OR host=&quot;*SITE6-5*&quot; OR host=&quot;*SITE6-6*&quot; OR host=&quot;*SITE6-7*&quot; OR host=&quot;*SITE6-8*&quot; OR host=&quot;*SITE6-9*&quot; OR host=&quot;*SITE6-10*&quot;)">Area 6</choice>
+      <!-- AREA 7: Replace patterns below -->
+      <choice value="(host=&quot;AREA7*&quot; OR host=&quot;*SITE7-1*&quot; OR host=&quot;*SITE7-2*&quot; OR host=&quot;*SITE7-3*&quot; OR host=&quot;*SITE7-4*&quot; OR host=&quot;*SITE7-5*&quot; OR host=&quot;*SITE7-6*&quot; OR host=&quot;*SITE7-7*&quot; OR host=&quot;*SITE7-8*&quot; OR host=&quot;*SITE7-9*&quot; OR host=&quot;*SITE7-10*&quot;)">Area 7</choice>
+      <!-- AREA 8: Replace patterns below -->
+      <choice value="(host=&quot;AREA8*&quot; OR host=&quot;*SITE8-1*&quot; OR host=&quot;*SITE8-2*&quot; OR host=&quot;*SITE8-3*&quot; OR host=&quot;*SITE8-4*&quot; OR host=&quot;*SITE8-5*&quot; OR host=&quot;*SITE8-6*&quot; OR host=&quot;*SITE8-7*&quot; OR host=&quot;*SITE8-8*&quot; OR host=&quot;*SITE8-9*&quot; OR host=&quot;*SITE8-10*&quot;)">Area 8</choice>
+      <!-- AREA 9: Replace patterns below -->
+      <choice value="(host=&quot;AREA9*&quot; OR host=&quot;*SITE9-1*&quot; OR host=&quot;*SITE9-2*&quot; OR host=&quot;*SITE9-3*&quot; OR host=&quot;*SITE9-4*&quot; OR host=&quot;*SITE9-5*&quot; OR host=&quot;*SITE9-6*&quot; OR host=&quot;*SITE9-7*&quot; OR host=&quot;*SITE9-8*&quot; OR host=&quot;*SITE9-9*&quot; OR host=&quot;*SITE9-10*&quot;)">Area 9</choice>
+      <!-- AREA 10: Replace patterns below -->
+      <choice value="(host=&quot;AREA10*&quot; OR host=&quot;*SITE10-1*&quot; OR host=&quot;*SITE10-2*&quot; OR host=&quot;*SITE10-3*&quot; OR host=&quot;*SITE10-4*&quot; OR host=&quot;*SITE10-5*&quot; OR host=&quot;*SITE10-6*&quot; OR host=&quot;*SITE10-7*&quot; OR host=&quot;*SITE10-8*&quot; OR host=&quot;*SITE10-9*&quot; OR host=&quot;*SITE10-10*&quot;)">Area 10</choice>
       <default></default>
     </input>
+    <!-- SITE FILTER: Replace with your actual site hostname patterns
+         Example: host="*NYC-MAN-*" for NYC Manhattan site -->
     <input type="dropdown" token="site_filter" searchWhenChanged="true">
       <label>Site</label>
       <choice value="">All Sites</choice>
-      <choice value="host=&quot;*hostname_site1-1*&quot;">Site 1.1</choice>
-      <choice value="host=&quot;*hostname_site1-2*&quot;">Site 1.2</choice>
-      <choice value="host=&quot;*hostname_site1-3*&quot;">Site 1.3</choice>
-      <choice value="host=&quot;*hostname_site1-4*&quot;">Site 1.4</choice>
-      <choice value="host=&quot;*hostname_site1-5*&quot;">Site 1.5</choice>
-      <choice value="host=&quot;*hostname_site1-6*&quot;">Site 1.6</choice>
-      <choice value="host=&quot;*hostname_site1-7*&quot;">Site 1.7</choice>
-      <choice value="host=&quot;*hostname_site1-8*&quot;">Site 1.8</choice>
-      <choice value="host=&quot;*hostname_site1-9*&quot;">Site 1.9</choice>
-      <choice value="host=&quot;*hostname_site1-10*&quot;">Site 1.10</choice>
-      <choice value="host=&quot;*hostname_site2-1*&quot;">Site 2.1</choice>
-      <choice value="host=&quot;*hostname_site2-2*&quot;">Site 2.2</choice>
-      <choice value="host=&quot;*hostname_site2-3*&quot;">Site 2.3</choice>
-      <choice value="host=&quot;*hostname_site2-4*&quot;">Site 2.4</choice>
-      <choice value="host=&quot;*hostname_site2-5*&quot;">Site 2.5</choice>
-      <choice value="host=&quot;*hostname_site2-6*&quot;">Site 2.6</choice>
-      <choice value="host=&quot;*hostname_site2-7*&quot;">Site 2.7</choice>
-      <choice value="host=&quot;*hostname_site2-8*&quot;">Site 2.8</choice>
-      <choice value="host=&quot;*hostname_site2-9*&quot;">Site 2.9</choice>
-      <choice value="host=&quot;*hostname_site2-10*&quot;">Site 2.10</choice>
-      <choice value="host=&quot;*hostname_site3-1*&quot;">Site 3.1</choice>
-      <choice value="host=&quot;*hostname_site3-2*&quot;">Site 3.2</choice>
-      <choice value="host=&quot;*hostname_site3-3*&quot;">Site 3.3</choice>
-      <choice value="host=&quot;*hostname_site3-4*&quot;">Site 3.4</choice>
-      <choice value="host=&quot;*hostname_site3-5*&quot;">Site 3.5</choice>
-      <choice value="host=&quot;*hostname_site3-6*&quot;">Site 3.6</choice>
-      <choice value="host=&quot;*hostname_site3-7*&quot;">Site 3.7</choice>
-      <choice value="host=&quot;*hostname_site3-8*&quot;">Site 3.8</choice>
-      <choice value="host=&quot;*hostname_site3-9*&quot;">Site 3.9</choice>
-      <choice value="host=&quot;*hostname_site3-10*&quot;">Site 3.10</choice>
-      <choice value="host=&quot;*hostname_site4-1*&quot;">Site 4.1</choice>
-      <choice value="host=&quot;*hostname_site4-2*&quot;">Site 4.2</choice>
-      <choice value="host=&quot;*hostname_site4-3*&quot;">Site 4.3</choice>
-      <choice value="host=&quot;*hostname_site4-4*&quot;">Site 4.4</choice>
-      <choice value="host=&quot;*hostname_site4-5*&quot;">Site 4.5</choice>
-      <choice value="host=&quot;*hostname_site4-6*&quot;">Site 4.6</choice>
-      <choice value="host=&quot;*hostname_site4-7*&quot;">Site 4.7</choice>
-      <choice value="host=&quot;*hostname_site4-8*&quot;">Site 4.8</choice>
-      <choice value="host=&quot;*hostname_site4-9*&quot;">Site 4.9</choice>
-      <choice value="host=&quot;*hostname_site4-10*&quot;">Site 4.10</choice>
-      <choice value="host=&quot;*hostname_site5-1*&quot;">Site 5.1</choice>
-      <choice value="host=&quot;*hostname_site5-2*&quot;">Site 5.2</choice>
-      <choice value="host=&quot;*hostname_site5-3*&quot;">Site 5.3</choice>
-      <choice value="host=&quot;*hostname_site5-4*&quot;">Site 5.4</choice>
-      <choice value="host=&quot;*hostname_site5-5*&quot;">Site 5.5</choice>
-      <choice value="host=&quot;*hostname_site5-6*&quot;">Site 5.6</choice>
-      <choice value="host=&quot;*hostname_site5-7*&quot;">Site 5.7</choice>
-      <choice value="host=&quot;*hostname_site5-8*&quot;">Site 5.8</choice>
-      <choice value="host=&quot;*hostname_site5-9*&quot;">Site 5.9</choice>
-      <choice value="host=&quot;*hostname_site5-10*&quot;">Site 5.10</choice>
-      <choice value="host=&quot;*hostname_site6-1*&quot;">Site 6.1</choice>
-      <choice value="host=&quot;*hostname_site6-2*&quot;">Site 6.2</choice>
-      <choice value="host=&quot;*hostname_site6-3*&quot;">Site 6.3</choice>
-      <choice value="host=&quot;*hostname_site6-4*&quot;">Site 6.4</choice>
-      <choice value="host=&quot;*hostname_site6-5*&quot;">Site 6.5</choice>
-      <choice value="host=&quot;*hostname_site6-6*&quot;">Site 6.6</choice>
-      <choice value="host=&quot;*hostname_site6-7*&quot;">Site 6.7</choice>
-      <choice value="host=&quot;*hostname_site6-8*&quot;">Site 6.8</choice>
-      <choice value="host=&quot;*hostname_site6-9*&quot;">Site 6.9</choice>
-      <choice value="host=&quot;*hostname_site6-10*&quot;">Site 6.10</choice>
-      <choice value="host=&quot;*hostname_site7-1*&quot;">Site 7.1</choice>
-      <choice value="host=&quot;*hostname_site7-2*&quot;">Site 7.2</choice>
-      <choice value="host=&quot;*hostname_site7-3*&quot;">Site 7.3</choice>
-      <choice value="host=&quot;*hostname_site7-4*&quot;">Site 7.4</choice>
-      <choice value="host=&quot;*hostname_site7-5*&quot;">Site 7.5</choice>
-      <choice value="host=&quot;*hostname_site7-6*&quot;">Site 7.6</choice>
-      <choice value="host=&quot;*hostname_site7-7*&quot;">Site 7.7</choice>
-      <choice value="host=&quot;*hostname_site7-8*&quot;">Site 7.8</choice>
-      <choice value="host=&quot;*hostname_site7-9*&quot;">Site 7.9</choice>
-      <choice value="host=&quot;*hostname_site7-10*&quot;">Site 7.10</choice>
-      <choice value="host=&quot;*hostname_site8-1*&quot;">Site 8.1</choice>
-      <choice value="host=&quot;*hostname_site8-2*&quot;">Site 8.2</choice>
-      <choice value="host=&quot;*hostname_site8-3*&quot;">Site 8.3</choice>
-      <choice value="host=&quot;*hostname_site8-4*&quot;">Site 8.4</choice>
-      <choice value="host=&quot;*hostname_site8-5*&quot;">Site 8.5</choice>
-      <choice value="host=&quot;*hostname_site8-6*&quot;">Site 8.6</choice>
-      <choice value="host=&quot;*hostname_site8-7*&quot;">Site 8.7</choice>
-      <choice value="host=&quot;*hostname_site8-8*&quot;">Site 8.8</choice>
-      <choice value="host=&quot;*hostname_site8-9*&quot;">Site 8.9</choice>
-      <choice value="host=&quot;*hostname_site8-10*&quot;">Site 8.10</choice>
-      <choice value="host=&quot;*hostname_site9-1*&quot;">Site 9.1</choice>
-      <choice value="host=&quot;*hostname_site9-2*&quot;">Site 9.2</choice>
-      <choice value="host=&quot;*hostname_site9-3*&quot;">Site 9.3</choice>
-      <choice value="host=&quot;*hostname_site9-4*&quot;">Site 9.4</choice>
-      <choice value="host=&quot;*hostname_site9-5*&quot;">Site 9.5</choice>
-      <choice value="host=&quot;*hostname_site9-6*&quot;">Site 9.6</choice>
-      <choice value="host=&quot;*hostname_site9-7*&quot;">Site 9.7</choice>
-      <choice value="host=&quot;*hostname_site9-8*&quot;">Site 9.8</choice>
-      <choice value="host=&quot;*hostname_site9-9*&quot;">Site 9.9</choice>
-      <choice value="host=&quot;*hostname_site9-10*&quot;">Site 9.10</choice>
-      <choice value="host=&quot;*hostname_site10-1*&quot;">Site 10.1</choice>
-      <choice value="host=&quot;*hostname_site10-2*&quot;">Site 10.2</choice>
-      <choice value="host=&quot;*hostname_site10-3*&quot;">Site 10.3</choice>
-      <choice value="host=&quot;*hostname_site10-4*&quot;">Site 10.4</choice>
-      <choice value="host=&quot;*hostname_site10-5*&quot;">Site 10.5</choice>
-      <choice value="host=&quot;*hostname_site10-6*&quot;">Site 10.6</choice>
-      <choice value="host=&quot;*hostname_site10-7*&quot;">Site 10.7</choice>
-      <choice value="host=&quot;*hostname_site10-8*&quot;">Site 10.8</choice>
-      <choice value="host=&quot;*hostname_site10-9*&quot;">Site 10.9</choice>
-      <choice value="host=&quot;*hostname_site10-10*&quot;">Site 10.10</choice>
+      <choice value="host=&quot;*SITE1-1*&quot;">Site 1.1</choice>
+      <choice value="host=&quot;*SITE1-2*&quot;">Site 1.2</choice>
+      <choice value="host=&quot;*SITE1-3*&quot;">Site 1.3</choice>
+      <choice value="host=&quot;*SITE1-4*&quot;">Site 1.4</choice>
+      <choice value="host=&quot;*SITE1-5*&quot;">Site 1.5</choice>
+      <choice value="host=&quot;*SITE1-6*&quot;">Site 1.6</choice>
+      <choice value="host=&quot;*SITE1-7*&quot;">Site 1.7</choice>
+      <choice value="host=&quot;*SITE1-8*&quot;">Site 1.8</choice>
+      <choice value="host=&quot;*SITE1-9*&quot;">Site 1.9</choice>
+      <choice value="host=&quot;*SITE1-10*&quot;">Site 1.10</choice>
+      <choice value="host=&quot;*SITE2-1*&quot;">Site 2.1</choice>
+      <choice value="host=&quot;*SITE2-2*&quot;">Site 2.2</choice>
+      <choice value="host=&quot;*SITE2-3*&quot;">Site 2.3</choice>
+      <choice value="host=&quot;*SITE2-4*&quot;">Site 2.4</choice>
+      <choice value="host=&quot;*SITE2-5*&quot;">Site 2.5</choice>
+      <choice value="host=&quot;*SITE2-6*&quot;">Site 2.6</choice>
+      <choice value="host=&quot;*SITE2-7*&quot;">Site 2.7</choice>
+      <choice value="host=&quot;*SITE2-8*&quot;">Site 2.8</choice>
+      <choice value="host=&quot;*SITE2-9*&quot;">Site 2.9</choice>
+      <choice value="host=&quot;*SITE2-10*&quot;">Site 2.10</choice>
+      <choice value="host=&quot;*SITE3-1*&quot;">Site 3.1</choice>
+      <choice value="host=&quot;*SITE3-2*&quot;">Site 3.2</choice>
+      <choice value="host=&quot;*SITE3-3*&quot;">Site 3.3</choice>
+      <choice value="host=&quot;*SITE3-4*&quot;">Site 3.4</choice>
+      <choice value="host=&quot;*SITE3-5*&quot;">Site 3.5</choice>
+      <choice value="host=&quot;*SITE3-6*&quot;">Site 3.6</choice>
+      <choice value="host=&quot;*SITE3-7*&quot;">Site 3.7</choice>
+      <choice value="host=&quot;*SITE3-8*&quot;">Site 3.8</choice>
+      <choice value="host=&quot;*SITE3-9*&quot;">Site 3.9</choice>
+      <choice value="host=&quot;*SITE3-10*&quot;">Site 3.10</choice>
+      <choice value="host=&quot;*SITE4-1*&quot;">Site 4.1</choice>
+      <choice value="host=&quot;*SITE4-2*&quot;">Site 4.2</choice>
+      <choice value="host=&quot;*SITE4-3*&quot;">Site 4.3</choice>
+      <choice value="host=&quot;*SITE4-4*&quot;">Site 4.4</choice>
+      <choice value="host=&quot;*SITE4-5*&quot;">Site 4.5</choice>
+      <choice value="host=&quot;*SITE4-6*&quot;">Site 4.6</choice>
+      <choice value="host=&quot;*SITE4-7*&quot;">Site 4.7</choice>
+      <choice value="host=&quot;*SITE4-8*&quot;">Site 4.8</choice>
+      <choice value="host=&quot;*SITE4-9*&quot;">Site 4.9</choice>
+      <choice value="host=&quot;*SITE4-10*&quot;">Site 4.10</choice>
+      <choice value="host=&quot;*SITE5-1*&quot;">Site 5.1</choice>
+      <choice value="host=&quot;*SITE5-2*&quot;">Site 5.2</choice>
+      <choice value="host=&quot;*SITE5-3*&quot;">Site 5.3</choice>
+      <choice value="host=&quot;*SITE5-4*&quot;">Site 5.4</choice>
+      <choice value="host=&quot;*SITE5-5*&quot;">Site 5.5</choice>
+      <choice value="host=&quot;*SITE5-6*&quot;">Site 5.6</choice>
+      <choice value="host=&quot;*SITE5-7*&quot;">Site 5.7</choice>
+      <choice value="host=&quot;*SITE5-8*&quot;">Site 5.8</choice>
+      <choice value="host=&quot;*SITE5-9*&quot;">Site 5.9</choice>
+      <choice value="host=&quot;*SITE5-10*&quot;">Site 5.10</choice>
+      <choice value="host=&quot;*SITE6-1*&quot;">Site 6.1</choice>
+      <choice value="host=&quot;*SITE6-2*&quot;">Site 6.2</choice>
+      <choice value="host=&quot;*SITE6-3*&quot;">Site 6.3</choice>
+      <choice value="host=&quot;*SITE6-4*&quot;">Site 6.4</choice>
+      <choice value="host=&quot;*SITE6-5*&quot;">Site 6.5</choice>
+      <choice value="host=&quot;*SITE6-6*&quot;">Site 6.6</choice>
+      <choice value="host=&quot;*SITE6-7*&quot;">Site 6.7</choice>
+      <choice value="host=&quot;*SITE6-8*&quot;">Site 6.8</choice>
+      <choice value="host=&quot;*SITE6-9*&quot;">Site 6.9</choice>
+      <choice value="host=&quot;*SITE6-10*&quot;">Site 6.10</choice>
+      <choice value="host=&quot;*SITE7-1*&quot;">Site 7.1</choice>
+      <choice value="host=&quot;*SITE7-2*&quot;">Site 7.2</choice>
+      <choice value="host=&quot;*SITE7-3*&quot;">Site 7.3</choice>
+      <choice value="host=&quot;*SITE7-4*&quot;">Site 7.4</choice>
+      <choice value="host=&quot;*SITE7-5*&quot;">Site 7.5</choice>
+      <choice value="host=&quot;*SITE7-6*&quot;">Site 7.6</choice>
+      <choice value="host=&quot;*SITE7-7*&quot;">Site 7.7</choice>
+      <choice value="host=&quot;*SITE7-8*&quot;">Site 7.8</choice>
+      <choice value="host=&quot;*SITE7-9*&quot;">Site 7.9</choice>
+      <choice value="host=&quot;*SITE7-10*&quot;">Site 7.10</choice>
+      <choice value="host=&quot;*SITE8-1*&quot;">Site 8.1</choice>
+      <choice value="host=&quot;*SITE8-2*&quot;">Site 8.2</choice>
+      <choice value="host=&quot;*SITE8-3*&quot;">Site 8.3</choice>
+      <choice value="host=&quot;*SITE8-4*&quot;">Site 8.4</choice>
+      <choice value="host=&quot;*SITE8-5*&quot;">Site 8.5</choice>
+      <choice value="host=&quot;*SITE8-6*&quot;">Site 8.6</choice>
+      <choice value="host=&quot;*SITE8-7*&quot;">Site 8.7</choice>
+      <choice value="host=&quot;*SITE8-8*&quot;">Site 8.8</choice>
+      <choice value="host=&quot;*SITE8-9*&quot;">Site 8.9</choice>
+      <choice value="host=&quot;*SITE8-10*&quot;">Site 8.10</choice>
+      <choice value="host=&quot;*SITE9-1*&quot;">Site 9.1</choice>
+      <choice value="host=&quot;*SITE9-2*&quot;">Site 9.2</choice>
+      <choice value="host=&quot;*SITE9-3*&quot;">Site 9.3</choice>
+      <choice value="host=&quot;*SITE9-4*&quot;">Site 9.4</choice>
+      <choice value="host=&quot;*SITE9-5*&quot;">Site 9.5</choice>
+      <choice value="host=&quot;*SITE9-6*&quot;">Site 9.6</choice>
+      <choice value="host=&quot;*SITE9-7*&quot;">Site 9.7</choice>
+      <choice value="host=&quot;*SITE9-8*&quot;">Site 9.8</choice>
+      <choice value="host=&quot;*SITE9-9*&quot;">Site 9.9</choice>
+      <choice value="host=&quot;*SITE9-10*&quot;">Site 9.10</choice>
+      <choice value="host=&quot;*SITE10-1*&quot;">Site 10.1</choice>
+      <choice value="host=&quot;*SITE10-2*&quot;">Site 10.2</choice>
+      <choice value="host=&quot;*SITE10-3*&quot;">Site 10.3</choice>
+      <choice value="host=&quot;*SITE10-4*&quot;">Site 10.4</choice>
+      <choice value="host=&quot;*SITE10-5*&quot;">Site 10.5</choice>
+      <choice value="host=&quot;*SITE10-6*&quot;">Site 10.6</choice>
+      <choice value="host=&quot;*SITE10-7*&quot;">Site 10.7</choice>
+      <choice value="host=&quot;*SITE10-8*&quot;">Site 10.8</choice>
+      <choice value="host=&quot;*SITE10-9*&quot;">Site 10.9</choice>
+      <choice value="host=&quot;*SITE10-10*&quot;">Site 10.10</choice>
       <default></default>
     </input>
+    <!-- SUBAREA FILTER: Replace with your actual subarea hostname patterns
+         Example: host="*NYC-MAN-FL1*" for NYC Manhattan Floor 1 subarea -->
     <input type="dropdown" token="subarea_filter" searchWhenChanged="true">
       <label>Subarea</label>
       <choice value="">All Subareas</choice>
-      <choice value="host=&quot;*hostname_subarea1-1*&quot;">Subarea 1.1</choice>
-      <choice value="host=&quot;*hostname_subarea1-2*&quot;">Subarea 1.2</choice>
-      <choice value="host=&quot;*hostname_subarea1-3*&quot;">Subarea 1.3</choice>
-      <choice value="host=&quot;*hostname_subarea1-4*&quot;">Subarea 1.4</choice>
-      <choice value="host=&quot;*hostname_subarea2-1*&quot;">Subarea 2.1</choice>
-      <choice value="host=&quot;*hostname_subarea2-2*&quot;">Subarea 2.2</choice>
-      <choice value="host=&quot;*hostname_subarea2-3*&quot;">Subarea 2.3</choice>
+      <choice value="host=&quot;*SUBAREA1-1*&quot;">Subarea 1.1</choice>
+      <choice value="host=&quot;*SUBAREA1-2*&quot;">Subarea 1.2</choice>
+      <choice value="host=&quot;*SUBAREA1-3*&quot;">Subarea 1.3</choice>
+      <choice value="host=&quot;*SUBAREA1-4*&quot;">Subarea 1.4</choice>
+      <choice value="host=&quot;*SUBAREA2-1*&quot;">Subarea 2.1</choice>
+      <choice value="host=&quot;*SUBAREA2-2*&quot;">Subarea 2.2</choice>
+      <choice value="host=&quot;*SUBAREA2-3*&quot;">Subarea 2.3</choice>
       <default></default>
     </input>
     <input type="dropdown" token="facility_filter" searchWhenChanged="true">
