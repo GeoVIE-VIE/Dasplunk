@@ -35,6 +35,43 @@
       <default>*</default>
       <prefix>host=</prefix>
     </input>
+    <input type="dropdown" token="area_filter" searchWhenChanged="true">
+      <label>Area</label>
+      <choice value="">All Areas</choice>
+      <choice value="host=&quot;hostname_area1*&quot;">Area 1</choice>
+      <choice value="host=&quot;hostname_area2*&quot;">Area 2</choice>
+      <choice value="host=&quot;hostname_area3*&quot;">Area 3</choice>
+      <choice value="host=&quot;hostname_area4*&quot;">Area 4</choice>
+      <choice value="host=&quot;hostname_area5*&quot;">Area 5</choice>
+      <default></default>
+    </input>
+    <input type="dropdown" token="site_filter" searchWhenChanged="true">
+      <label>Site</label>
+      <choice value="">All Sites</choice>
+      <choice value="host=&quot;*hostname_site1*&quot;">Site 1</choice>
+      <choice value="host=&quot;*hostname_site2*&quot;">Site 2</choice>
+      <choice value="host=&quot;*hostname_site3*&quot;">Site 3</choice>
+      <choice value="host=&quot;*hostname_site4*&quot;">Site 4</choice>
+      <choice value="host=&quot;*hostname_site5*&quot;">Site 5</choice>
+      <choice value="host=&quot;*hostname_site6*&quot;">Site 6</choice>
+      <choice value="host=&quot;*hostname_site7*&quot;">Site 7</choice>
+      <choice value="host=&quot;*hostname_site8*&quot;">Site 8</choice>
+      <choice value="host=&quot;*hostname_site9*&quot;">Site 9</choice>
+      <choice value="host=&quot;*hostname_site10*&quot;">Site 10</choice>
+      <default></default>
+    </input>
+    <input type="dropdown" token="subarea_filter" searchWhenChanged="true">
+      <label>Subarea</label>
+      <choice value="">All Subareas</choice>
+      <choice value="host=&quot;*hostname_subarea1-1*&quot;">Subarea 1.1</choice>
+      <choice value="host=&quot;*hostname_subarea1-2*&quot;">Subarea 1.2</choice>
+      <choice value="host=&quot;*hostname_subarea1-3*&quot;">Subarea 1.3</choice>
+      <choice value="host=&quot;*hostname_subarea1-4*&quot;">Subarea 1.4</choice>
+      <choice value="host=&quot;*hostname_subarea2-1*&quot;">Subarea 2.1</choice>
+      <choice value="host=&quot;*hostname_subarea2-2*&quot;">Subarea 2.2</choice>
+      <choice value="host=&quot;*hostname_subarea2-3*&quot;">Subarea 2.3</choice>
+      <default></default>
+    </input>
     <input type="dropdown" token="facility_filter" searchWhenChanged="true">
       <label>Facility</label>
       <choice value="">All Facilities</choice>
@@ -86,7 +123,7 @@
 | eval facility_code=coalesce(cisco_facility, brocade_facility, brocade_facility_simple, brocade_code, cisco_mnemonic, "Uncategorized")
 | eval mnemonic=coalesce(cisco_mnemonic, brocade_code, brocade_facility)
 | eval severity_label=case(severity_num=0, "Emergency", severity_num=1, "Alert", severity_num=2, "Critical", severity_num=3, "Error", severity_num=4, "Warning", severity_num=5, "Notice", severity_num=6, "Informational", severity_num=7, "Debug", true(), "Unknown")
-| search $vendor_filter$ $severity_filter$ $facility_filter$</query>
+| search $vendor_filter$ $severity_filter$ $facility_filter$ $area_filter$ $site_filter$ $subarea_filter$</query>
     <earliest>$time_range.earliest$</earliest>
     <latest>$time_range.latest$</latest>
   </search>
@@ -131,6 +168,9 @@
             <span class="hero-chip">Vendor filter: $vendor_filter$</span>
             <span class="hero-chip">Severity filter: $severity_filter$</span>
             <span class="hero-chip">Facility filter: $facility_filter$</span>
+            <span class="hero-chip">Area filter: $area_filter$</span>
+            <span class="hero-chip">Site filter: $site_filter$</span>
+            <span class="hero-chip">Subarea filter: $subarea_filter$</span>
           </div>
           <div class="hero-grid">
             <div class="hero-card">Interactive KPI tiles for total syslog volume, device counts, and severity-driven action lists.</div>
