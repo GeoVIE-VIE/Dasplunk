@@ -713,15 +713,18 @@
       <title>Routing Loop Risk Score</title>
       <single>
         <search base="base_syslog">
-          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+          <query>| search ("ADJCHANGE" OR "ADJCHG" OR "NBRCHANGE" OR "neighbor" OR "Neighbor" OR "Nbr" OR "Peer")
+| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
 | rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))"
+| search neighbor_ip=* OR neighbor_name=*
 | rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
 | rex field=_raw "(?i)from\s+(?&lt;routing_state_from&gt;[A-Za-z0-9/]+)\s+to\s+(?&lt;routing_state_to&gt;[A-Za-z0-9/]+)"
-| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
-| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
+| rex field=_raw "(?i)(?:state|status|to|went|goes|is)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading|up|down)"
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name)
 | eval routing_int=coalesce(routing_int, "Unknown")
-| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from, "Unknown")
+| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from)
+| search neighbor_ip=* routing_state=*
 | eval state_down=if(match(routing_state,"(?i)(down|idle|closed|hold)"),1,0)
 | streamstats window=10 count as state_changes by host neighbor_ip routing_int
 | where state_changes &gt; 3
@@ -743,12 +746,15 @@
       <title>Routing Adjacency Flaps</title>
       <single>
         <search base="base_syslog">
-          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+          <query>| search ("ADJCHANGE" OR "ADJCHG" OR "NBRCHANGE" OR "neighbor" OR "Neighbor" OR "Nbr" OR "Peer")
+| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
 | rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))"
+| search neighbor_ip=* OR neighbor_name=*
 | rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
-| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name)
 | eval routing_int=coalesce(routing_int, "Unknown")
+| search neighbor_ip=*
 | streamstats window=10 count as state_changes by host neighbor_ip routing_int
 | where state_changes &gt; 3
 | stats dc(host) as flapping_neighbors
@@ -809,18 +815,21 @@
       <title>Routing Adjacency Flapping Detection (Potential Loop Indicators)</title>
       <table>
         <search base="base_syslog">
-          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+          <query>| search ("ADJCHANGE" OR "ADJCHG" OR "NBRCHANGE" OR "neighbor" OR "Neighbor" OR "Nbr" OR "Peer")
+| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
 | rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))(?:\s*\((?&lt;neighbor_int_paren&gt;[A-Za-z0-9_./-]+)\))?"
+| search neighbor_ip=* OR neighbor_name=*
 | rex field=_raw "(?i)\((?&lt;routing_int_paren&gt;[A-Za-z]{1,12}[A-Za-z0-9]*\s*\d+(?:/\d+)*(?:\.\d+)?[A-Za-z0-9/.-]*?)\)\s+(?:is\s+)?(?:Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect)"
 | rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
 | rex field=_raw "(?i)intf(?:ace)?\s+(?&lt;routing_int_alt&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
 | rex field=_raw "(?i)from\s+(?&lt;routing_state_from&gt;[A-Za-z0-9/]+)\s+to\s+(?&lt;routing_state_to&gt;[A-Za-z0-9/]+)"
-| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
-| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
+| rex field=_raw "(?i)(?:state|status|to|went|goes|is)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading|up|down)"
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name)
 | eval routing_int=coalesce(routing_int, routing_int_alt, routing_int_paren, neighbor_int_paren, "Unknown")
 | eval routing_int=trim(replace(routing_int, "\\s+", ""))
-| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from, "Unknown")
+| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from)
+| search neighbor_ip=* routing_state=*
 | eval state_down=if(match(routing_state,"(?i)(down|idle|closed|hold)"),1,0)
 | sort 0 _time
 | streamstats window=20 count as state_changes sum(state_down) as down_events by host neighbor_ip routing_int
@@ -866,9 +875,13 @@
       <title>Devices with Highest Routing Instability</title>
       <chart>
         <search base="base_syslog">
-          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+          <query>| search ("ADJCHANGE" OR "ADJCHG" OR "NBRCHANGE" OR "neighbor" OR "Neighbor" OR "Nbr" OR "Peer")
+| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
-| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))"
+| search neighbor_ip=* OR neighbor_name=*
+| rex field=_raw "(?i)(?:state|status|to|went|goes|is)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading|up|down)"
+| search routing_state=*
 | eval state_down=if(match(routing_state,"(?i)(down|idle|closed|hold)"),1,0)
 | stats count as Total_Events sum(state_down) as Down_Events by host
 | eval Instability_Score=round((Down_Events / Total_Events) * 100, 1)
