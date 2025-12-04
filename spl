@@ -694,6 +694,250 @@
     </panel>
   </row>
 
+  <!-- ROUTING LOOP DETECTION -->
+  <row>
+    <panel>
+      <html>
+        <div style="padding: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; margin-bottom: 10px;">
+          <h2 style="margin: 0 0 6px 0; color: #fca5a5; font-size: 16px; font-weight: 600;">⚠️ Routing Loop Detection</h2>
+          <p style="margin: 0; color: #fecaca; font-size: 13px;">Monitors routing protocol instability, adjacency flapping, and error patterns that indicate potential routing loops</p>
+        </div>
+      </html>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Routing Loop Risk Score</title>
+      <single>
+        <search base="base_syslog">
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))"
+| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)from\s+(?&lt;routing_state_from&gt;[A-Za-z0-9/]+)\s+to\s+(?&lt;routing_state_to&gt;[A-Za-z0-9/]+)"
+| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
+| eval routing_int=coalesce(routing_int, "Unknown")
+| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from, "Unknown")
+| eval state_down=if(match(routing_state,"(?i)(down|idle|closed|hold)"),1,0)
+| streamstats window=10 count as state_changes by host neighbor_ip routing_int
+| where state_changes &gt; 3
+| stats count as high_risk_flaps dc(host) as affected_devices
+| eval loop_risk_score=round(min(100, (high_risk_flaps * 5) + (affected_devices * 10)), 0)
+| eval loop_risk_score=if(isnull(loop_risk_score), 0, loop_risk_score)
+| fields loop_risk_score</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#eab308","#f97316","#ef4444"]</option>
+        <option name="rangeValues">[20,40,60]</option>
+        <option name="underLabel">LOOP RISK SCORE (0-100)</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <title>Routing Adjacency Flaps</title>
+      <single>
+        <search base="base_syslog">
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))"
+| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
+| eval routing_int=coalesce(routing_int, "Unknown")
+| streamstats window=10 count as state_changes by host neighbor_ip routing_int
+| where state_changes &gt; 3
+| stats dc(host) as flapping_neighbors
+| eval flapping_neighbors=if(isnull(flapping_neighbors), 0, flapping_neighbors)
+| fields flapping_neighbors</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#eab308","#ef4444"]</option>
+        <option name="rangeValues">[1,5]</option>
+        <option name="underLabel">FLAPPING ADJACENCIES</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <title>Loop Error Detections</title>
+      <single>
+        <search base="base_syslog">
+          <query>| search ("routing loop" OR "loop detected" OR "max hops" OR "hop limit" OR "TTL exceeded" OR "redistribution loop" OR "route loop" OR "SIA" OR "stuck-in-active" OR "path vector loop" OR "martian" OR "metric limit")
+| stats count as loop_errors
+| eval loop_errors=if(isnull(loop_errors), 0, loop_errors)
+| fields loop_errors</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#f97316","#ef4444"]</option>
+        <option name="rangeValues">[1,10]</option>
+        <option name="underLabel">EXPLICIT LOOP ERRORS</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <title>Routing Event Velocity</title>
+      <single>
+        <search base="base_syslog">
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| stats count as total_routing_events earliest(_time) as earliest_time latest(_time) as latest_time
+| eval time_span_min = (latest_time - earliest_time) / 60
+| eval events_per_min = if(time_span_min &gt; 0, round(total_routing_events / time_span_min, 2), total_routing_events)
+| eval events_per_min=if(isnull(events_per_min), 0, events_per_min)
+| fields events_per_min</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#eab308","#f97316","#ef4444"]</option>
+        <option name="rangeValues">[5,10,20]</option>
+        <option name="underLabel">ROUTING EVENTS/MIN</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Routing Adjacency Flapping Detection (Potential Loop Indicators)</title>
+      <table>
+        <search base="base_syslog">
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))(?:\s*\((?&lt;neighbor_int_paren&gt;[A-Za-z0-9_./-]+)\))?"
+| rex field=_raw "(?i)\((?&lt;routing_int_paren&gt;[A-Za-z]{1,12}[A-Za-z0-9]*\s*\d+(?:/\d+)*(?:\.\d+)?[A-Za-z0-9/.-]*?)\)\s+(?:is\s+)?(?:Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect)"
+| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;routing_int&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)intf(?:ace)?\s+(?&lt;routing_int_alt&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)from\s+(?&lt;routing_state_from&gt;[A-Za-z0-9/]+)\s+to\s+(?&lt;routing_state_to&gt;[A-Za-z0-9/]+)"
+| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
+| eval neighbor_ip=coalesce(neighbor_ip, neighbor_name, "Unknown")
+| eval routing_int=coalesce(routing_int, routing_int_alt, routing_int_paren, neighbor_int_paren, "Unknown")
+| eval routing_int=trim(replace(routing_int, "\\s+", ""))
+| eval routing_state=coalesce(routing_state_to, routing_state, routing_state_from, "Unknown")
+| eval state_down=if(match(routing_state,"(?i)(down|idle|closed|hold)"),1,0)
+| sort 0 _time
+| streamstats window=20 count as state_changes sum(state_down) as down_events by host neighbor_ip routing_int
+| where state_changes &gt; 5
+| stats count as Flap_Count min(_time) as First_Flap max(_time) as Last_Flap sum(state_down) as Down_Events dc(routing_state) as Unique_States by routing_protocol host neighbor_ip routing_int
+| eval Flap_Duration_Min=round((Last_Flap - First_Flap) / 60, 1)
+| eval Flap_Rate=if(Flap_Duration_Min&gt;0, round(Flap_Count/Flap_Duration_Min, 2), Flap_Count)
+| eval Loop_Risk=case(Flap_Count&gt;=20 AND Flap_Rate&gt;=2, "CRITICAL", Flap_Count&gt;=10 AND Flap_Rate&gt;=1, "HIGH", Flap_Count&gt;=5, "MEDIUM", true(), "LOW")
+| eval First_Flap=strftime(First_Flap, "%Y-%m-%d %H:%M:%S")
+| eval Last_Flap=strftime(Last_Flap, "%Y-%m-%d %H:%M:%S")
+| sort -Loop_Risk -Flap_Count
+| head 25
+| rename routing_protocol as "Protocol" host as "Device" neighbor_ip as "Neighbor" routing_int as "Interface" Flap_Count as "Flaps" Flap_Duration_Min as "Duration (min)" Flap_Rate as "Flaps/Min" Down_Events as "Down Count" Unique_States as "State Changes" Loop_Risk as "Risk Level" First_Flap as "First Detected" Last_Flap as "Last Detected"</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Routing Protocol Event Rate Timeline (Anomaly Detection)</title>
+      <chart>
+        <search base="base_syslog">
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| timechart span=5m count by routing_protocol useother=f limit=0
+| fields - OTHER</query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.seriesColors">[#10b981,#6366f1,#8b5cf6,#f97316,#ef4444]</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
+        <option name="height">300</option>
+      </chart>
+    </panel>
+
+    <panel>
+      <title>Devices with Highest Routing Instability</title>
+      <chart>
+        <search base="base_syslog">
+          <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
+| search routing_protocol=*
+| rex field=_raw "(?i)(?:state|status|to|went|goes)\s+(?&lt;routing_state&gt;Up|Down|Full|Established|Idle|Attempt|Init|Two-Way|Active|Connect|Hold|ExStart|Exchange|Loading)"
+| eval state_down=if(match(routing_state,"(?i)(down|idle|closed|hold)"),1,0)
+| stats count as Total_Events sum(state_down) as Down_Events by host
+| eval Instability_Score=round((Down_Events / Total_Events) * 100, 1)
+| sort -Instability_Score
+| head 15
+| rename host as "Device"</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#ef4444]</option>
+        <option name="charting.axisY.maximumNumber">100</option>
+        <option name="height">350</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Explicit Loop Error Messages</title>
+      <table>
+        <search base="base_syslog">
+          <query>| search ("routing loop" OR "loop detected" OR "max hops" OR "hop limit" OR "TTL exceeded" OR "redistribution loop" OR "route loop" OR "SIA" OR "stuck-in-active" OR "path vector loop" OR "martian" OR "metric limit" OR "invalid next hop" OR "recursive routing" OR "forwarding loop")
+| eval Loop_Type=case(match(_raw,"(?i)redistribution loop"),"Redistribution Loop", match(_raw,"(?i)stuck.?in.?active|SIA"),"EIGRP SIA", match(_raw,"(?i)TTL exceeded"),"TTL Exceeded", match(_raw,"(?i)path vector loop"),"BGP Path Loop", match(_raw,"(?i)max.?hops|hop.?limit|metric.?limit"),"Hop/Metric Limit", match(_raw,"(?i)martian"),"Martian Address", match(_raw,"(?i)recursive routing|forwarding loop"),"Recursive/Forwarding Loop", true(),"Generic Loop Detection")
+| rex field=_raw "(?i)(?:on|Interface)\s+(?:interface\s+)?(?&lt;interface&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?&lt;ip_address&gt;\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+| eval interface=coalesce(interface, "N/A")
+| eval ip_address=coalesce(ip_address, "N/A")
+| table _time host Loop_Type interface ip_address severity_label _raw
+| eval _time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| sort -_time
+| head 50
+| rename _time as "Timestamp" host as "Device" Loop_Type as "Loop Type" interface as "Interface" ip_address as "IP Address" severity_label as "Severity" _raw as "Full Message"</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Correlated Routing and Interface Instability</title>
+      <table>
+        <search base="base_syslog">
+          <query>| eval is_routing_event=if(match(_raw, "(?i)(BGP|OSPF|EIGRP|ISIS|RIP)"), 1, 0)
+| eval is_interface_event=if(match(_raw, "(?i)(changed state|link.?down|link.?up|flap)"), 1, 0)
+| eval has_correlation=if(is_routing_event=1 AND is_interface_event=1, 1, 0)
+| rex field=_raw "(?i)(?&lt;interface&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Bundle-Ether|Eth-Trunk|Loopback|Vlan|Vl|Gi|Te|Fa|Et|Po|Lo|Se|Hu|Fo)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)(?:Nbr|Neighbor|Peer)\s+(?:(?&lt;neighbor_ip&gt;\d{1,3}(?:\.\d{1,3}){3})|(?&lt;neighbor_name&gt;[A-Za-z0-9_.:-]+))"
+| eval interface=coalesce(interface, "Unknown")
+| eval neighbor=coalesce(neighbor_ip, neighbor_name, "N/A")
+| where has_correlation=1
+| bucket _time span=5m
+| stats count as Correlated_Events dc(interface) as Affected_Interfaces values(neighbor) as Neighbors by _time host interface
+| eval Neighbors=mvjoin(Neighbors, ", ")
+| eval Loop_Indicator=if(Correlated_Events&gt;5, "High Risk", if(Correlated_Events&gt;2, "Medium Risk", "Low Risk"))
+| eval _time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| sort -Correlated_Events
+| head 25
+| rename _time as "Time Window" host as "Device" interface as "Interface" Correlated_Events as "Event Count" Affected_Interfaces as "Interfaces" Neighbors as "Affected Neighbors" Loop_Indicator as "Risk"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
   <!-- LIVE SYSLOG STREAM -->
   <row>
     <panel>
