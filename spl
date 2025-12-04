@@ -872,7 +872,8 @@
 | eval Instability_Score=round((Down_Events / Total_Events) * 100, 1)
 | sort -Instability_Score
 | head 15
-| rename host as "Device"</query>
+| rename host as "Device"
+| fields Device Instability_Score</query>
         </search>
         <option name="charting.chart">bar</option>
         <option name="charting.chart.showDataLabels">all</option>
