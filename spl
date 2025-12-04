@@ -648,6 +648,222 @@
     </panel>
   </row>
 
+  <!-- MAC FLAPPING DETECTION -->
+  <row>
+    <panel>
+      <html>
+        <div style="padding: 12px; background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.4); border-radius: 12px; margin-bottom: 10px;">
+          <h2 style="margin: 0 0 6px 0; color: #fdba74; font-size: 16px; font-weight: 600;">🔄 MAC Address Flapping Detection</h2>
+          <p style="margin: 0; color: #fed7aa; font-size: 13px;">Detects Layer 2 loops and MAC address instability using vendor-specific flapping notifications</p>
+        </div>
+      </html>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>MAC Flap Risk Score</title>
+      <single>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "flapping between" OR "MAC moved" OR "MAC address moved" OR "loop.?detect" OR "LOOPGUARD" OR "LOOP_DETECT")
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address&gt;[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_colon&gt;[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_hyphen&gt;[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2})"
+| eval mac_address=coalesce(mac_address, mac_address_colon, mac_address_hyphen)
+| search mac_address=*
+| rex field=_raw "(?i)vlan\s*(?&lt;vlan_id&gt;\d+)"
+| eval vlan_id=coalesce(vlan_id, "Unknown")
+| streamstats window=10 count as flap_events by mac_address vlan_id
+| where flap_events &gt; 2
+| stats count as total_flaps dc(mac_address) as unique_macs dc(host) as affected_devices
+| eval mac_risk_score=round(min(100, (total_flaps * 3) + (unique_macs * 8) + (affected_devices * 10)), 0)
+| eval mac_risk_score=if(isnull(mac_risk_score), 0, mac_risk_score)
+| fields mac_risk_score</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#eab308","#f97316","#ef4444"]</option>
+        <option name="rangeValues">[20,40,60]</option>
+        <option name="underLabel">MAC FLAP RISK (0-100)</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <title>Flapping MAC Addresses</title>
+      <single>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "flapping between" OR "MAC moved" OR "MAC address moved")
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address&gt;[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_colon&gt;[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_hyphen&gt;[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2})"
+| eval mac_address=coalesce(mac_address, mac_address_colon, mac_address_hyphen)
+| search mac_address=*
+| stats dc(mac_address) as flapping_macs
+| eval flapping_macs=if(isnull(flapping_macs), 0, flapping_macs)
+| fields flapping_macs</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#eab308","#ef4444"]</option>
+        <option name="rangeValues">[3,10]</option>
+        <option name="underLabel">UNIQUE FLAPPING MACS</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <title>Affected VLANs</title>
+      <single>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "flapping between" OR "MAC moved" OR "MAC address moved")
+| rex field=_raw "(?i)vlan\s*(?&lt;vlan_id&gt;\d+)"
+| search vlan_id=*
+| stats dc(vlan_id) as affected_vlans
+| eval affected_vlans=if(isnull(affected_vlans), 0, affected_vlans)
+| fields affected_vlans</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#eab308","#ef4444"]</option>
+        <option name="rangeValues">[2,5]</option>
+        <option name="underLabel">VLANS WITH FLAPPING</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <title>Loop Detection Events</title>
+      <single>
+        <search base="base_syslog">
+          <query>| search ("loop.?detect" OR "LOOPGUARD" OR "LOOP_DETECT" OR "loop guard" OR "err.?disable.*loop" OR "LOOP-3-" OR "loop prevention")
+| stats count as loop_detections
+| eval loop_detections=if(isnull(loop_detections), 0, loop_detections)
+| fields loop_detections</query>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["#22c55e","#f97316","#ef4444"]</option>
+        <option name="rangeValues">[1,5]</option>
+        <option name="underLabel">LOOP DETECTION TRIGGERS</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>MAC Address Flapping Table</title>
+      <table>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "flapping between" OR "MAC moved" OR "MAC address moved")
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address&gt;[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_colon&gt;[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_hyphen&gt;[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2}-[0-9a-fA-F]{2})"
+| eval mac_address=coalesce(mac_address, mac_address_colon, mac_address_hyphen)
+| search mac_address=*
+| rex field=_raw "(?i)vlan\s*(?&lt;vlan_id&gt;\d+)"
+| rex field=_raw "(?i)(?:port|interface)[:\s]+(?&lt;source_port&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Gi|Te|Fa|Et|Po)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)(?:and|to)\s+(?:port|interface)[:\s]+(?&lt;dest_port&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Gi|Te|Fa|Et|Po)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)(?:from|moved.?from)\s+(?:port|interface)[:\s]+(?&lt;source_port_alt&gt;\d+/\d+(?:/\d+)?)"
+| rex field=_raw "(?i)(?:to|moved.?to)\s+(?:port|interface)[:\s]+(?&lt;dest_port_alt&gt;\d+/\d+(?:/\d+)?)"
+| eval source_port=coalesce(source_port, source_port_alt, "Unknown")
+| eval dest_port=coalesce(dest_port, dest_port_alt, "Unknown")
+| eval vlan_id=coalesce(vlan_id, "Unknown")
+| sort 0 _time
+| streamstats window=20 count as flap_count by mac_address vlan_id
+| stats count as Total_Flaps min(_time) as First_Flap max(_time) as Last_Flap values(source_port) as Source_Ports values(dest_port) as Dest_Ports dc(source_port) as Port_Count by host mac_address vlan_id
+| eval Flap_Duration_Min=round((Last_Flap - First_Flap) / 60, 1)
+| eval Flap_Rate=if(Flap_Duration_Min&gt;0, round(Total_Flaps/Flap_Duration_Min, 2), Total_Flaps)
+| eval Loop_Risk=case(Total_Flaps&gt;=20 AND Flap_Rate&gt;=2, "CRITICAL", Total_Flaps&gt;=10 AND Flap_Rate&gt;=1, "HIGH", Total_Flaps&gt;=5, "MEDIUM", true(), "LOW")
+| eval Source_Ports=mvjoin(Source_Ports, ", ")
+| eval Dest_Ports=mvjoin(Dest_Ports, ", ")
+| eval First_Flap=strftime(First_Flap, "%Y-%m-%d %H:%M:%S")
+| eval Last_Flap=strftime(Last_Flap, "%Y-%m-%d %H:%M:%S")
+| sort -Loop_Risk -Total_Flaps
+| head 25
+| rename host as "Device" mac_address as "MAC Address" vlan_id as "VLAN" Total_Flaps as "Flaps" Flap_Duration_Min as "Duration (min)" Flap_Rate as "Flaps/Min" Source_Ports as "Source Ports" Dest_Ports as "Destination Ports" Port_Count as "Port Count" Loop_Risk as "Risk Level" First_Flap as "First Detected" Last_Flap as "Last Detected"</query>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>MAC Flapping by VLAN</title>
+      <chart>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "flapping between" OR "MAC moved" OR "MAC address moved")
+| rex field=_raw "(?i)vlan\s*(?&lt;vlan_id&gt;\d+)"
+| search vlan_id=*
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address&gt;[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4})"
+| rex field=_raw "(?i)(?:Host|MAC|mac.?address)[:\s]+(?&lt;mac_address_colon&gt;[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})"
+| eval mac_address=coalesce(mac_address, mac_address_colon)
+| search mac_address=*
+| stats dc(mac_address) as Unique_MACs count as Total_Events by vlan_id
+| sort -Total_Events
+| head 15
+| rename vlan_id as "VLAN"</query>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#f97316]</option>
+        <option name="height">350</option>
+      </chart>
+    </panel>
+
+    <panel>
+      <title>Loop Detection Timeline</title>
+      <chart>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "loop.?detect" OR "LOOPGUARD" OR "LOOP_DETECT")
+| eval event_type=case(match(_raw, "(?i)(MACFLAP|MAC_FLAP|mac flap|flapping)"), "MAC Flapping", match(_raw, "(?i)(loop.?detect|LOOPGUARD|LOOP_DETECT|loop guard)"), "Loop Detection", true(), "Other")
+| timechart span=30m count by event_type</query>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">zero</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.seriesColors">[#f97316,#ef4444]</option>
+        <option name="height">300</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Port Pair Analysis (Loop Candidates)</title>
+      <table>
+        <search base="base_syslog">
+          <query>| search ("MACFLAP" OR "MAC_FLAP" OR "mac flap" OR "flapping between")
+| rex field=_raw "(?i)(?:port|interface)[:\s]+(?&lt;port1&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Gi|Te|Fa|Et|Po)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)(?:and|to)\s+(?:port|interface)[:\s]+(?&lt;port2&gt;(?:GigabitEthernet|TenGigabitEthernet|FastEthernet|Ethernet|Port-?channel|Gi|Te|Fa|Et|Po)[A-Za-z]*\s*\d+(?:/\d+)*(?:\.\d+)?)"
+| rex field=_raw "(?i)(?:from|moved.?from)\s+(?:port|interface)[:\s]+(?&lt;port1_alt&gt;\d+/\d+(?:/\d+)?)"
+| rex field=_raw "(?i)(?:to|moved.?to)\s+(?:port|interface)[:\s]+(?&lt;port2_alt&gt;\d+/\d+(?:/\d+)?)"
+| eval port1=coalesce(port1, port1_alt)
+| eval port2=coalesce(port2, port2_alt)
+| search port1=* port2=*
+| rex field=_raw "(?i)vlan\s*(?&lt;vlan_id&gt;\d+)"
+| eval vlan_id=coalesce(vlan_id, "Unknown")
+| eval port_pair=if(port1&lt;port2, port1." &lt;-&gt; ".port2, port2." &lt;-&gt; ".port1)
+| stats count as Flap_Count latest(_time) as Last_Flap dc(vlan_id) as VLAN_Count values(vlan_id) as VLANs by host port_pair
+| eval VLANs=mvjoin(VLANs, ", ")
+| eval Last_Flap=strftime(Last_Flap, "%Y-%m-%d %H:%M:%S")
+| eval Loop_Likelihood=case(Flap_Count&gt;=20, "VERY HIGH", Flap_Count&gt;=10, "HIGH", Flap_Count&gt;=5, "MEDIUM", true(), "LOW")
+| sort -Flap_Count
+| head 20
+| rename host as "Device" port_pair as "Port Pair" Flap_Count as "Flap Count" VLAN_Count as "VLANs Affected" VLANs as "VLAN List" Loop_Likelihood as "Loop Risk" Last_Flap as "Last Detected"</query>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+
   <!-- ROUTING PROTOCOL EVENTS -->
   <row>
     <panel>
