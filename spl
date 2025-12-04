@@ -384,6 +384,7 @@
         </search>
         <option name="charting.chart">area</option>
         <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.drilldown">none</option>
         <option name="charting.legend.placement">bottom</option>
         <option name="charting.seriesColors">[#ef4444,#f97316,#dc2626,#f87171,#eab308,#22c55e,#3b82f6,#6b7280]</option>
@@ -506,6 +507,7 @@
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.drilldown">none</option>
         <option name="charting.seriesColors">[#22c55e,#ef4444,#3b82f6,#6b7280]</option>
         <option name="height">300</option>
