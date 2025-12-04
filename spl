@@ -380,7 +380,7 @@
       <title>Event Timeline by Severity</title>
       <chart>
         <search base="base_syslog">
-          <query>| eval severity_display = severity_num . "-" . severity_label | timechart span=10m count by severity_display</query>
+          <query>| eval severity_display = severity_num . "-" . severity_label | timechart span=auto count by severity_display</query>
         </search>
         <option name="charting.chart">area</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -503,7 +503,7 @@
       <title>Authentication Timeline</title>
       <chart>
         <search base="base_syslog">
-          <query>| rex field=_raw "(?i)(?&lt;auth_action&gt;LOGIN_SUCCESS|LOGIN_FAILED|SEC_LOGIN|login|logout|authentication|authorized|unauthorized|denied|accepted|rejected|failed|success)" | search auth_action=* | eval auth_result=case(match(auth_action, "(?i)LOGIN_SUCCESS|success|accepted|authorized|login"), "Success", match(auth_action, "(?i)LOGIN_FAILED|SEC_LOGIN|failed|denied|rejected|unauthorized"), "Failed", match(auth_action, "(?i)logout"), "Logout", true(), "Other") | timechart span=30m count by auth_result</query>
+          <query>| rex field=_raw "(?i)(?&lt;auth_action&gt;LOGIN_SUCCESS|LOGIN_FAILED|SEC_LOGIN|login|logout|authentication|authorized|unauthorized|denied|accepted|rejected|failed|success)" | search auth_action=* | eval auth_result=case(match(auth_action, "(?i)LOGIN_SUCCESS|success|accepted|authorized|login"), "Success", match(auth_action, "(?i)LOGIN_FAILED|SEC_LOGIN|failed|denied|rejected|unauthorized"), "Failed", match(auth_action, "(?i)logout"), "Logout", true(), "Other") | timechart span=auto count by auth_result</query>
         </search>
         <option name="charting.chart">column</option>
         <option name="charting.chart.stackMode">stacked</option>
@@ -598,7 +598,7 @@
       <title>Interface Link State Changes</title>
       <chart>
         <search base="base_syslog">
-          <query>| rex field=_raw "(?i)(?&lt;link_state&gt;changed state to up|changed state to down|state up|state down|link.?up|link.?down|is up|is down)" | search link_state=* | eval state=if(match(link_state, "(?i)up"), "Up", "Down") | timechart span=15m count by state</query>
+          <query>| rex field=_raw "(?i)(?&lt;link_state&gt;changed state to up|changed state to down|state up|state down|link.?up|link.?down|is up|is down)" | search link_state=* | eval state=if(match(link_state, "(?i)up"), "Up", "Down") | timechart span=auto count by state</query>
         </search>
         <option name="charting.chart">line</option>
         <option name="charting.chart.nullValueMode">zero</option>
@@ -684,7 +684,7 @@
           <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
 | eval routing_state=case(match(_raw,"(?i)(down|idle|closed|hold)"),"Down", match(_raw,"(?i)(up|full|established)"),"Up", true(),"Other")
-| timechart span=1h count by routing_protocol useother=f limit=0
+| timechart span=auto count by routing_protocol useother=f limit=0
 | fields - OTHER</query>
         </search>
         <option name="charting.chart">line</option>
@@ -849,7 +849,7 @@
         <search base="base_syslog">
           <query>| eval routing_protocol=case(match(_raw,"(?i)BGP"),"BGP", match(_raw,"(?i)OSPF"),"OSPF", match(_raw,"(?i)EIGRP"),"EIGRP", match(_raw,"(?i)ISIS|IS-IS"),"IS-IS", match(_raw,"(?i)RIP"),"RIP", true(), null())
 | search routing_protocol=*
-| timechart span=5m count by routing_protocol useother=f limit=0
+| timechart span=auto count by routing_protocol useother=f limit=0
 | fields - OTHER</query>
         </search>
         <option name="charting.chart">line</option>
