@@ -1190,4 +1190,49 @@
     </panel>
   </row>
 
+  <!-- XYZ INDEX - HOST PROPERTIES LOOKUP -->
+  <row>
+    <panel>
+      <html>
+        <div class="hero-banner" style="background: linear-gradient(120deg, rgba(16,185,129,0.15), rgba(14,165,233,0.12));">
+          <h1>🔍 XYZ Index - Host Properties Lookup</h1>
+          <p>Search host properties by MAC address - includes port description, VLAN name, and 802.1X authentication state</p>
+        </div>
+      </html>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>XYZ Host Properties Table</title>
+      <input type="text" token="xyz_mac_filter" searchWhenChanged="true">
+        <label>MAC Address Filter</label>
+        <default>*</default>
+      </input>
+      <table>
+        <search>
+          <query>index=XYZ
+| spath path="mac" output="mac"
+| spath path="host_properties.sw_ipport_desc{}.value" output="port_description"
+| spath path="host_properties.sw_port_vlan_name{}.value" output="vlan_name"
+| spath path="host_properties.dot1x_auth_state{}.value" output="dot1x_state"
+| search mac=$xyz_mac_filter$
+| eval port_description=mvjoin(port_description, ", ")
+| eval vlan_name=mvjoin(vlan_name, ", ")
+| eval dot1x_state=mvjoin(dot1x_state, ", ")
+| table _time mac port_description vlan_name dot1x_state host
+| sort -_time
+| eval _time=strftime(_time, "%Y-%m-%d %H:%M:%S")
+| rename _time as "Timestamp" mac as "MAC Address" port_description as "Port Description" vlan_name as "VLAN Name" dot1x_state as "802.1X Auth State" host as "Source Host"</query>
+          <earliest>$time_range.earliest$</earliest>
+          <latest>$time_range.latest$</latest>
+        </search>
+        <option name="count">25</option>
+        <option name="drilldown">none</option>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+
 </form>
