@@ -238,8 +238,16 @@
           .single-value .single-result { font-size: 48px !important; font-weight: 700 !important; }
           .highcharts-background { fill: transparent !important; }
           .table-chrome { background: transparent !important; }
-          .shared-tableview .table th { background: rgba(15, 23, 42, 0.95) !important; color: #a5b4fc !important; }
-          .shared-tableview .table td { background: transparent !important; color: #e2e8f0 !important; }
+          .shared-tableview .table { background: transparent !important; }
+          .shared-tableview .table th { background: rgba(15, 23, 42, 0.95) !important; color: #a5b4fc !important; border-bottom: 1px solid rgba(99, 102, 241, 0.3) !important; }
+          .shared-tableview .table td { background: rgba(15, 23, 42, 0.4) !important; color: #e2e8f0 !important; border-bottom: 1px solid rgba(99, 102, 241, 0.15) !important; }
+          .shared-tableview .table tr:hover td { background: rgba(99, 102, 241, 0.15) !important; }
+          .shared-tableview .table tr:nth-child(even) td { background: rgba(15, 23, 42, 0.6) !important; }
+          .shared-tableview .table tr:nth-child(even):hover td { background: rgba(99, 102, 241, 0.15) !important; }
+          .panel-body { background: transparent !important; }
+          .input-label { color: #a5b4fc !important; }
+          .splunk-textinput input { background: rgba(15, 23, 42, 0.8) !important; color: #e2e8f0 !important; border: 1px solid rgba(99, 102, 241, 0.4) !important; border-radius: 8px !important; }
+          .splunk-textinput input:focus { border-color: rgba(99, 102, 241, 0.8) !important; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important; }
           .hero-banner { padding: 20px 24px; background: linear-gradient(120deg, rgba(99,102,241,0.15), rgba(14,165,233,0.12));
                           border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.35);
                           backdrop-filter: blur(6px); color: #e2e8f0; }
