@@ -1,0 +1,175 @@
+<style>
+  /* === FORCE DARK THEME - OVERRIDE ALL USER SETTINGS === */
+
+  /* Dashboard background */
+  .dashboard-body, .dashboard-row, .dashboard-cell, .dashboard-panel,
+  .panel-element-row, .panel-body, .fieldset, .form-horizontal,
+  body, html {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%) !important;
+  }
+
+  /* Panel containers */
+  .dashboard-panel, .panel, .dashboard-element, .panel-element-row {
+    background: rgba(26, 26, 46, 0.8) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    border-radius: 16px !important;
+  }
+
+  /* Panel body and content wrappers */
+  .panel-body, .panel-body-inner, .splunk-view, .results-wrapper,
+  .shared-resultstable, .shared-tableview, .table-chrome, .table-wrapper,
+  .scroll-table-wrapper, .splunk-components-resultstable {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* === TABLE STYLES - MAXIMUM SPECIFICITY === */
+
+  /* Target every possible table container */
+  table, .table, .results-table,
+  .shared-tableview table,
+  .shared-resultstable table,
+  .splunk-table table,
+  .panel-body table,
+  .dashboard-panel table,
+  div[data-view] table,
+  .table-chrome table {
+    background: #0f172a !important;
+    background-color: #0f172a !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  /* Table header - all variations */
+  th, thead th, .table th, table th,
+  .shared-tableview th,
+  .shared-tableview .table th,
+  .shared-tableview thead th,
+  .shared-resultstable th,
+  .results-table th,
+  .splunk-table th,
+  .table-chrome th,
+  .sorts th,
+  thead tr th {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+    color: #a5b4fc !important;
+    border-bottom: 2px solid #6366f1 !important;
+    padding: 12px 16px !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+  }
+
+  /* Table cells - all variations */
+  td, tbody td, .table td, table td,
+  .shared-tableview td,
+  .shared-tableview .table td,
+  .shared-tableview tbody td,
+  .shared-resultstable td,
+  .results-table td,
+  .splunk-table td,
+  .table-chrome td,
+  tbody tr td {
+    background: #0f172a !important;
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2) !important;
+    padding: 10px 16px !important;
+  }
+
+  /* Alternating row colors */
+  tr:nth-child(even) td,
+  tbody tr:nth-child(even) td,
+  .shared-tableview tr:nth-child(even) td,
+  .shared-tableview tbody tr:nth-child(even) td,
+  .table tr:nth-child(even) td {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+  }
+
+  /* Hover states */
+  tr:hover td,
+  tbody tr:hover td,
+  .shared-tableview tr:hover td,
+  .shared-tableview tbody tr:hover td,
+  .table tr:hover td,
+  table tr:hover td {
+    background: #334155 !important;
+    background-color: #334155 !important;
+  }
+
+  /* Table rows */
+  tr, tbody tr, thead tr,
+  .shared-tableview tr,
+  .table tr, table tr {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* Remove any white backgrounds from wrappers */
+  .scrolling-table-wrapper, .scroll-table-wrapper,
+  .table-scroll-wrapper, .table-embed,
+  .tableview, .table-root,
+  [data-component="splunk-core:/splunkjs/mvc/tableview"] {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* === INPUT FIELDS === */
+  input, input[type="text"], .splunk-textinput input,
+  .input-text input, .search-input input {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #6366f1 !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+  }
+
+  input:focus, input[type="text"]:focus, .splunk-textinput input:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3) !important;
+    outline: none !important;
+  }
+
+  /* Input labels */
+  label, .input-label, .control-label {
+    color: #a5b4fc !important;
+  }
+
+  /* === TYPOGRAPHY === */
+  .panel-title, .panel-head h3, .panel-title-text {
+    font-family: 'Inter', 'Segoe UI', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    color: #e2e8f0 !important;
+  }
+
+  /* Single value visualizations */
+  .single-value { font-family: 'JetBrains Mono', 'Fira Code', monospace !important; }
+  .single-value .single-result { font-size: 48px !important; font-weight: 700 !important; }
+
+  /* Charts */
+  .highcharts-background { fill: transparent !important; }
+
+  /* === PAGINATION AND FOOTER === */
+  .table-footer, .pagination, .results-table-footer,
+  .shared-tableview-footer, .table-chrome-footer {
+    background: transparent !important;
+    color: #94a3b8 !important;
+  }
+
+  /* Pagination buttons */
+  .pagination a, .pagination span, .btn-pagination {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #6366f1 !important;
+  }
+
+  /* Row numbers column */
+  .row-number, td.row-number, .line-num {
+    background: #1e293b !important;
+    color: #6366f1 !important;
+    font-weight: 600 !important;
+  }
+</style>
